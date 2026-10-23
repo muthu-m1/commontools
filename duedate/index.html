@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Due Date Calculator</title>
+<meta name="description" content="Estimate a pregnancy due date from the last period, conception, IVF transfer or an ultrasound, with weeks pregnant, trimesters and common prenatal milestones. Private: nothing leaves your device.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#d0262c">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .methods { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 8px; background: var(--raised); }
+  .methods button { height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; }
+  .methods button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); }
+  .tl { position: relative; margin-top: 8px; }
+  .tl-track { position: relative; height: 44px; border-radius: 8px; overflow: hidden; display: flex; }
+  .tl-track span { height: 100%; display: grid; place-items: center; font-size: 12.5px; color: var(--muted); }
+  .tl-track .t1 { background: var(--raised); }
+  .tl-track .t2 { background: color-mix(in srgb, var(--raised) 55%, var(--chart-muted)); }
+  .tl-track .t3 { background: var(--raised); }
+  .tl-term { position: absolute; top: 0; height: 44px; border: 2px dashed var(--data); border-radius: 8px; pointer-events: none; }
+  .tl-done { position: absolute; top: 0; left: 0; height: 44px; background: color-mix(in srgb, var(--data) 22%, transparent); border-radius: 8px 0 0 8px; }
+  .tl-now { position: absolute; top: -26px; transform: translateX(-50%); display: grid; justify-items: center; }
+  .tl-now b { font-family: var(--font-fig); font-weight: 500; font-size: 12.5px; background: var(--data); color: var(--data-ink); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+  .tl-now i { width: 2px; height: 70px; background: var(--data); }
+  .tl-ticks { position: relative; height: 22px; margin-top: 6px; font-size: 12px; color: var(--muted); font-family: var(--font-fig); }
+  .tl-ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .ms { display: grid; gap: 6px; margin-top: 16px; }
+  .ms-row { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 12px; align-items: center; font-size: 13.5px; }
+  .ms-row .bar { position: relative; height: 10px; }
+  .ms-row .bar span { position: absolute; height: 10px; border-radius: 999px; background: var(--chart-muted); }
+  .ms-row .bar span.cur { background: var(--data); }
+  .ms-row .lbl b { font-weight: 500; }
+  .ms-row .lbl small { display: block; color: var(--muted); font-family: var(--font-fig); font-size: 12px; }
+  @media (max-width: 640px) { .ms-row { grid-template-columns: minmax(0, 1fr); } .tl-track span { font-size: 12px; white-space: nowrap; overflow: hidden; } }
+</style>
+</head>
+<body data-tool="duedate">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Health &amp; safety</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Due Date Calculator</h1>
+      <p class="sub" id="finding">An estimated due date, how far along you are, and what usually happens when.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-4 form" id="form" novalidate autocomplete="off">
+      <header><h2>Date it from</h2></header>
+      <div class="methods" role="group" aria-label="Method" id="methods">
+        <button type="button" data-m="lmp" aria-pressed="true">Last period</button>
+        <button type="button" data-m="conception" aria-pressed="false">Conception</button>
+        <button type="button" data-m="ivf" aria-pressed="false">IVF transfer</button>
+        <button type="button" data-m="ultrasound" aria-pressed="false">Ultrasound</button>
+      </div>
+      <div class="form" data-for="lmp">
+        <div class="field"><label for="lmp">First day of your last period</label><input class="input" type="date" id="lmp"></div>
+        <div class="field"><label for="cycle">Usual cycle length</label><div class="affix"><input class="input fig" type="number" id="cycle" min="20" max="45" step="1" value="28"><span>days</span></div><div class="hint">28 days is typical. A longer or shorter cycle moves the date by the difference.</div></div>
+      </div>
+      <div class="form" data-for="conception" hidden>
+        <div class="field"><label for="conc">Conception date</label><input class="input" type="date" id="conc"><div class="hint">Use this only if you know the date, for example from ovulation tracking.</div></div>
+      </div>
+      <div class="form" data-for="ivf" hidden>
+        <div class="field"><label for="xfer">Embryo transfer date</label><input class="input" type="date" id="xfer"></div>
+        <div class="segmented" role="radiogroup" aria-label="Embryo age at transfer">
+          <label><input type="radio" name="eday" id="e5" value="5" checked>Day 5 embryo</label>
+          <label><input type="radio" name="eday" id="e3" value="3">Day 3 embryo</label>
+        </div>
+      </div>
+      <div class="form" data-for="ultrasound" hidden>
+        <div class="field"><label for="scan">Date of the scan</label><input class="input" type="date" id="scan"></div>
+        <div class="form-row">
+          <div class="field"><label for="gw">Weeks at the scan</label><input class="input fig" type="number" id="gw" min="4" max="40" step="1" value="12"></div>
+          <div class="field"><label for="gd">Days</label><input class="input fig" type="number" id="gd" min="0" max="6" step="1" value="0"></div>
+        </div>
+        <div class="hint">Copy the gestational age from your scan report. An early scan is the most accurate way to date a pregnancy.</div>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </form>
+
+    <div class="span-8 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Estimated due date</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">Weeks pregnant today</div><div class="kpi-value data" id="k-ga">—</div></div>
+          <div class="kpi"><div class="kpi-label">Days to go</div><div class="kpi-value" id="k-left">—</div></div>
+          <div class="kpi"><div class="kpi-label">Full term (39w to 40w6d)</div><div class="kpi-value" id="k-term">—</div></div>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="h-tl">
+        <header><h2 id="h-tl">Your pregnancy, week by week</h2><span class="meta">Dashed box: 37 to 42 weeks, the usual window for birth</span></header>
+        <div class="tl" id="tl" style="margin-top:34px">
+          <div class="tl-track"><span class="t1" style="width:33.333%">First trimester</span><span class="t2" style="width:33.333%">Second</span><span class="t3" style="width:33.334%">Third</span></div>
+          <div class="tl-done" id="tl-done"></div>
+          <div class="tl-term" id="tl-term"></div>
+          <div class="tl-now" id="tl-now"><b id="tl-now-v"></b><i></i></div>
+          <div class="tl-ticks" id="tl-ticks"></div>
+        </div>
+        <div class="ms" id="ms"></div>
+        <p class="meta" style="margin-top:12px">Typical timing in US prenatal care (ACOG, CDC). Your midwife or doctor sets your own schedule.</p>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>Pregnancy is counted from the first day of the last menstrual period, about two weeks before conception, so a full-length pregnancy is 280 days (40 weeks).</p>
+        <div class="formula">Last period   due date = first day + 280 days (+ cycle length − 28)
+Conception    due date = conception + 266 days
+IVF           due date = transfer + 261 days (day-5 embryo)
+                       = transfer + 263 days (day-3 embryo)
+Ultrasound    due date = scan date + (280 − age at scan in days)</div>
+        <p>Weeks are counted in completed weeks and days: "16 weeks 3 days" is written 16w3d. The trimesters are weeks 0 to 13w6d, 14w0d to 27w6d, and 28w0d to birth. Early term is 37w0d to 38w6d, full term 39w0d to 40w6d and late term 41w0d to 41w6d.</p>
+        <p>A due date is an estimate. Most babies are born between 37 and 42 weeks, and only a few arrive on the date itself. When an early ultrasound disagrees with the date from your last period by more than a set margin, clinicians usually go by the scan.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.acog.org/clinical/guidance/committee-opinion/2017/05/methods-for-estimating-the-due-date" rel="noopener" target="_blank">ACOG Committee Opinion 700: Methods for estimating the due date</a></li>
+          <li><a href="https://www.acog.org/clinical/guidance/committee-opinion/2013/11/definition-of-term-pregnancy" rel="noopener" target="_blank">ACOG Committee Opinion 579: Definition of term pregnancy</a></li>
+          <li><a href="https://www.cdc.gov/pertussis/vaccines/tdap-vaccination-during-pregnancy.html" rel="noopener" target="_blank">CDC: Tdap vaccination during pregnancy</a></li>
+        </ul>
+        <p class="meta" style="margin-top:14px">Not medical advice. The dates you enter are not saved or sent anywhere.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, invalid, esc } = CT;
+  const L = DueLogic;
+  const now = new Date();
+  const today = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
+  const iso = (x) => `${x.y}-${String(x.m).padStart(2, '0')}-${String(x.d).padStart(2, '0')}`;
+  const parse = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? { y: +m[1], m: +m[2], d: +m[3] } : null; };
+  const fmt = (x, o) => new Intl.DateTimeFormat(undefined, o || { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(L.num(x) * 86400000));
+  const short = (x) => fmt(x, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  // example: about 16 weeks along today
+  $('#lmp').value = iso(L.add(today, -112));
+  $('#conc').value = iso(L.add(today, -98));
+  $('#xfer').value = iso(L.add(today, -93));
+  $('#scan').value = iso(L.add(today, -28));
+  let method = 'lmp';
+
+  function render() {
+    $$('[data-for]').forEach((f) => { f.hidden = f.dataset.for !== method; });
+    const err = $('#err'); err.hidden = true;
+    let due;
+    try { due = compute(); } catch (e) { err.hidden = false; err.textContent = e.message; blank(); return; }
+    const ga = L.gaDays(due, today), wd = L.weeksDays(ga);
+    $('#lead').textContent = fmt(due, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+    const tri = L.trimester(ga);
+    if (ga < 0) $('#lead-note').textContent = 'That date is in the future, so the pregnancy has not started by this count yet.';
+    else if (ga > 44 * 7) $('#lead-note').textContent = 'That is more than 44 weeks ago. Check the date you entered.';
+    else $('#lead-note').innerHTML = `Today you are <strong>${wd.weeks} weeks ${wd.days} ${wd.days === 1 ? 'day' : 'days'}</strong>, in the ${['', 'first', 'second', 'third'][tri]} trimester${ga >= 37 * 7 ? ` (${L.termLabel(ga).toLowerCase()})` : ''}.`;
+    $('#k-ga').textContent = ga >= 0 && ga <= 44 * 7 ? `${wd.weeks}w ${wd.days}d` : '—';
+    const left = 280 - ga;
+    $('#k-left').innerHTML = left >= 0 ? `${left}<small>${Math.floor(left / 7)} weeks ${left % 7} days</small>` : `${-left}<small>days past the due date</small>`;
+    $('#k-term').innerHTML = `${short(L.dateAt(due, 39))}<small>to ${short(L.dateAt(due, 40, 6))}</small>`;
+    $('#finding').innerHTML = `Estimated due date <strong>${fmt(due)}</strong>${ga >= 0 && ga <= 44 * 7 ? `; ${wd.weeks} weeks ${wd.days} days along today` : ''}. Births between ${short(L.dateAt(due, 37))} and ${short(L.dateAt(due, 42))} are within the usual range.`;
+    // timeline 0–42 weeks
+    const P = (days) => (Math.max(0, Math.min(42 * 7, days)) / (42 * 7)) * 100;
+    $('#tl-term').style.left = P(37 * 7) + '%';
+    $('#tl-term').style.width = (P(42 * 7) - P(37 * 7)) + '%';
+    const inRange = ga >= 0 && ga <= 42 * 7;
+    $('#tl-done').style.width = inRange ? P(ga) + '%' : '0';
+    $('#tl-now').hidden = !inRange;
+    $('#tl-now').style.left = P(ga) + '%';
+    $('#tl-now-v').textContent = `Today ${wd.weeks}w${wd.days}d`;
+    const narrow = $('#tl').clientWidth < 520;
+    $('#tl-ticks').innerHTML = (narrow ? [0, 10, 20, 30] : [0, 4, 8, 12, 14, 16, 20, 24, 28, 32, 36, 40].filter((w) => w !== 12 && w !== 16)).map((w) => `<span style="left:${P(w * 7)}%">${w}</span>`).join('') + `<span style="left:${P(42 * 7)}%;transform:translateX(-100%)">42 wk</span>`;
+    $('#ms').innerHTML = L.MILESTONES.map((m) => {
+      const a = m.from[0] * 7 + m.from[1], b = m.to[0] * 7 + m.to[1] + 1;
+      const cur = ga >= a && ga < b;
+      return `<div class="ms-row"><div class="lbl"><b>${esc(m.label)}</b><small>${m.from[0]}–${m.to[0]} weeks · ${short(L.dateAt(due, ...m.from))} to ${short(L.dateAt(due, ...m.to))}</small></div><div class="bar"><span class="${cur ? 'cur' : ''}" style="left:${P(a)}%;width:${P(b) - P(a)}%"></span></div></div>`;
+    }).join('');
+  }
+
+  function compute() {
+    const need = (id) => { const v = parse($('#' + id).value); invalid($('#' + id), v ? '' : 'Pick a date.'); if (!v) throw new Error('Pick a date.'); return v; };
+    if (method === 'lmp') {
+      const lmp = need('lmp'); const c = num($('#cycle'));
+      const ok = Number.isInteger(c) && c >= 20 && c <= 45; invalid($('#cycle'), ok ? '' : '20 to 45 days');
+      if (!ok) throw new Error('Cycle length should be a whole number of days from 20 to 45.');
+      return L.dueDate('lmp', { lmp, cycle: c });
+    }
+    if (method === 'conception') return L.dueDate('conception', { conception: need('conc') });
+    if (method === 'ivf') return L.dueDate('ivf', { transfer: need('xfer'), embryoDay: Number($('input[name="eday"]:checked').value) });
+    const scan = need('scan'); const w = num($('#gw')), dd = num($('#gd'));
+    const ok = Number.isInteger(w) && w >= 4 && w <= 40 && Number.isInteger(dd) && dd >= 0 && dd <= 6;
+    invalid($('#gw'), Number.isInteger(w) && w >= 4 && w <= 40 ? '' : '4 to 40'); invalid($('#gd'), Number.isInteger(dd) && dd >= 0 && dd <= 6 ? '' : '0 to 6');
+    if (!ok) throw new Error('Enter the weeks (4–40) and days (0–6) from the scan.');
+    return L.dueDate('ultrasound', { scan, weeks: w, days: dd });
+  }
+  function blank() { $('#lead').innerHTML = '<span class="dim">—</span>'; $('#lead-note').textContent = ''; ['#k-ga', '#k-left', '#k-term'].forEach((s) => { $(s).innerHTML = '<span class="dim">—</span>'; }); }
+
+  $('#methods').addEventListener('click', (e) => { const b = e.target.closest('[data-m]'); if (!b) return; method = b.dataset.m; $$('#methods button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); render(); });
+  $('#form').addEventListener('input', render);
+  $('#form').addEventListener('change', render);
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  render();
+})();
+</script>
+</body>
+</html>

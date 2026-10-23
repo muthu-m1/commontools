@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loan &amp; Mortgage Calculator</title>
+<meta name="description" content="Monthly payment, total interest, PMI and a full amortization schedule for mortgages and other loans. Free, private, runs in your browser.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1423b8">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--control); background: var(--surface); font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: background-color var(--t-hover) ease, color var(--t-hover) ease, border-color var(--t-hover) ease; }
+  .chip:hover { color: var(--text); border-color: var(--text); }
+  .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--surface); }
+  details.group { border-top: 1px solid var(--rule); padding-top: 14px; }
+  details.group > summary { cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  details.group > summary::-webkit-details-marker { display: none; }
+  details.group > summary::after { content: ""; width: 12px; height: 12px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5l3-3' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5l3-3' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat; transition: transform var(--t-ui) var(--ease-out); }
+  details.group[open] > summary::after { transform: rotate(180deg); }
+  details.group > .form { margin-top: 14px; }
+  details.group summary .meta { font-weight: 400; margin-left: auto; }
+
+  .split-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--raised); margin-top: 18px; gap: 2px; }
+  .split-bar span { display: block; height: 100%; min-width: 2px; transition: flex-grow var(--t-ui) var(--ease-out); }
+  .split-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 12px; }
+  .split-legend div { display: inline-flex; align-items: baseline; gap: 8px; font-size: 14px; white-space: nowrap; }
+  .split-legend .swatch-dot { align-self: center; }
+  .split-legend b { font-weight: 500; font-family: var(--font-fig); font-variant-numeric: tabular-nums; }
+  .split-legend span.name { color: var(--muted); }
+
+  .sched-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: var(--pad) var(--pad) 12px; }
+  .chart-note { margin-top: 10px; color: var(--muted); font-size: 13.5px; }
+  .chart-note strong { color: var(--text); font-weight: 500; }
+  .term-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 8px; }
+</style>
+</head>
+<body data-tool="loan">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Money</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Loan &amp; Mortgage Calculator</h1>
+      <p class="sub" id="finding">Monthly payment, lifetime interest and the full schedule for a mortgage, car loan or personal loan.</p>
+    </div>
+    <div class="title-actions no-print">
+      <button class="btn" type="button" id="csv"></button>
+      <button class="btn ghost" type="button" id="reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-4 form" id="form" novalidate autocomplete="off">
+      <header>
+        <h2>Your loan</h2>
+        <label class="sr-only" for="cur">Currency</label>
+        <select class="input" id="cur" style="width:auto;height:32px;font-size:14px"></select>
+      </header>
+
+      <div class="segmented" role="radiogroup" aria-label="Loan type">
+        <label><input type="radio" name="mode" id="mode-mortgage" value="mortgage" checked>Mortgage</label>
+        <label><input type="radio" name="mode" id="mode-loan" value="loan">Other loan</label>
+      </div>
+
+      <div class="form" data-show="mortgage">
+        <div class="field">
+          <label for="price">Home price</label>
+          <div class="affix"><span class="sym">$</span><input class="input fig" id="price" type="number" inputmode="decimal" min="0" step="any" value="400000"></div>
+        </div>
+        <div class="field">
+          <label for="down">Down payment</label>
+          <div class="affix"><span class="sym">$</span><input class="input fig" id="down" type="number" inputmode="decimal" min="0" step="any" value="40000"></div>
+          <div class="chips" id="down-chips" aria-label="Down payment presets">
+            <button type="button" class="chip" data-pct="3.5">3.5%</button>
+            <button type="button" class="chip" data-pct="5">5%</button>
+            <button type="button" class="chip" data-pct="10">10%</button>
+            <button type="button" class="chip" data-pct="20">20%</button>
+          </div>
+          <div class="hint" id="down-hint">10.0% of the price, so the loan is $360,000.</div>
+        </div>
+      </div>
+
+      <div class="field" data-show="loan" hidden>
+        <label for="amount">Loan amount</label>
+        <div class="affix"><span class="sym">$</span><input class="input fig" id="amount" type="number" inputmode="decimal" min="0" step="any" value="25000"></div>
+      </div>
+
+      <div class="field">
+        <label for="rate">Interest rate</label>
+        <div class="affix"><input class="input fig" id="rate" type="number" inputmode="decimal" min="0" max="100" step="any" value="6.25"><span>% a year</span></div>
+        <div class="hint">The rate on the loan itself, not the APR. APR adds fees and is quoted for comparison.</div>
+      </div>
+
+      <div class="field">
+        <label for="term">Term</label>
+        <div class="term-row">
+          <input class="input fig" id="term" type="number" inputmode="numeric" min="1" step="1" value="30">
+          <label class="sr-only" for="term-unit">Term unit</label>
+          <select class="input" id="term-unit"><option value="years" selected>years</option><option value="months">months</option></select>
+        </div>
+        <div class="chips" id="term-chips" aria-label="Common terms"></div>
+      </div>
+
+      <div class="field">
+        <label for="start">First payment</label>
+        <input class="input" id="start" type="month">
+      </div>
+
+      <details class="group" data-show="mortgage" open>
+        <summary>Taxes, insurance and fees <span class="meta" id="escrow-sum"></span></summary>
+        <div class="form">
+          <div class="form-row">
+            <div class="field">
+              <label for="tax">Property tax</label>
+              <div class="affix"><span class="sym">$</span><input class="input fig" id="tax" type="number" inputmode="decimal" min="0" step="any" value="4800"></div>
+              <div class="hint">Per year</div>
+            </div>
+            <div class="field">
+              <label for="ins">Home insurance</label>
+              <div class="affix"><span class="sym">$</span><input class="input fig" id="ins" type="number" inputmode="decimal" min="0" step="any" value="1800"></div>
+              <div class="hint">Per year</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="pmi">Mortgage insurance (PMI)</label>
+              <div class="affix"><input class="input fig" id="pmi" type="number" inputmode="decimal" min="0" max="5" step="any" value="0.5"><span>% a year</span></div>
+              <div class="hint">Only charged with under 20% down</div>
+            </div>
+            <div class="field">
+              <label for="hoa">HOA dues</label>
+              <div class="affix"><span class="sym">$</span><input class="input fig" id="hoa" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+              <div class="hint">Per month</div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary>Pay extra</summary>
+        <div class="form">
+          <div class="form-row">
+            <div class="field">
+              <label for="extra">Extra each month</label>
+              <div class="affix"><span class="sym">$</span><input class="input fig" id="extra" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+            </div>
+            <div class="field">
+              <label for="extra-from">Starting with payment</label>
+              <input class="input fig" id="extra-from" type="number" inputmode="numeric" min="1" step="1" value="1">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="lump">One-time extra</label>
+              <div class="affix"><span class="sym">$</span><input class="input fig" id="lump" type="number" inputmode="decimal" min="0" step="any" value="0"></div>
+            </div>
+            <div class="field">
+              <label for="lump-at">With payment</label>
+              <input class="input fig" id="lump-at" type="number" inputmode="numeric" min="1" step="1" value="12">
+            </div>
+          </div>
+        </div>
+      </details>
+    </form>
+
+    <div class="span-8 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Monthly payment</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="split-bar" id="split-bar" aria-hidden="true"></div>
+        <div class="split-legend" id="split-legend"></div>
+        <div class="kpis" id="kpis">
+          <div class="kpi"><div class="kpi-label">Total interest</div><div class="kpi-value" id="k-int">—</div></div>
+          <div class="kpi"><div class="kpi-label">Principal + interest</div><div class="kpi-value" id="k-paid">—</div></div>
+          <div class="kpi"><div class="kpi-label">Paid off</div><div class="kpi-value" id="k-off">—</div></div>
+          <div class="kpi"><div class="kpi-label" id="k-4-label">Principal passes interest</div><div class="kpi-value" id="k-4">—</div></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-years">
+        <header><h2 id="h-years">Principal and interest, by loan year</h2><div id="lg-years"></div></header>
+        <div class="chart" id="ch-years"></div>
+        <p class="chart-note" id="years-note"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-bal">
+        <header><h2 id="h-bal">Balance remaining</h2><div id="lg-bal"></div></header>
+        <div class="chart" id="ch-bal"></div>
+      </section>
+    </div>
+
+    <section class="panel flush span-12" aria-labelledby="h-sched">
+      <div class="sched-head">
+        <div>
+          <h2 id="h-sched" style="font-size:16px;font-weight:600">Amortization schedule</h2>
+          <p class="meta" id="sched-meta">Principal and interest only. Taxes, insurance, PMI and HOA dues are not part of the loan balance.</p>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Schedule view">
+          <label><input type="radio" name="view" id="view-year" value="year" checked>By year</label>
+          <label><input type="radio" name="view" id="view-month" value="month">By month</label>
+        </div>
+      </div>
+      <div class="table-wrap tall">
+        <table id="sched"><thead></thead><tbody></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>The monthly principal and interest payment uses the standard formula for a fully amortizing, fixed-rate loan:</p>
+        <div class="formula">M = P × r ÷ (1 − (1 + r)^−n)
+
+P = amount borrowed
+r = annual interest rate ÷ 12
+n = number of monthly payments</div>
+        <p>Each month, interest is the remaining balance × r, rounded to the cent the way lenders round it. The rest of the payment reduces the balance. The payment itself is rounded to the cent, so the final payment is adjusted by a few cents or dollars to land exactly on zero. Every extra payment goes entirely to principal.</p>
+        <h3>Mortgage costs on top of the loan</h3>
+        <ul>
+          <li>Property tax and home insurance are divided by 12. Real escrow amounts change when your tax bill or premium changes.</li>
+          <li>PMI is estimated as the yearly rate × the original loan amount ÷ 12, and only when the down payment is under 20% of the price. Actual premiums depend on your credit and lender.</li>
+          <li>Under the US Homeowners Protection Act, borrower-paid PMI ends automatically when the balance is scheduled to reach 78% of the home's original value, if your payments are current. You can ask to cancel at 80%. This calculator stops PMI at the 78% point of the original schedule.</li>
+        </ul>
+        <h3>What is not included</h3>
+        <p>Closing costs, points, adjustable-rate changes, escrow shortages, tax deductions and prepayment penalties. Use the rate on your loan estimate, not the APR, for the payment.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.consumerfinance.gov/ask-cfpb/when-can-i-remove-private-mortgage-insurance-pmi-from-my-loan-en-202/" rel="noopener" target="_blank">CFPB: When can I remove private mortgage insurance (PMI)?</a></li>
+          <li><a href="https://www.law.cornell.edu/uscode/text/12/4902" rel="noopener" target="_blank">12 U.S. Code § 4902: termination of private mortgage insurance</a></li>
+          <li><a href="https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-mortgage-interest-rate-and-an-apr-en-135/" rel="noopener" target="_blank">CFPB: Interest rate and APR, the difference</a></li>
+          <li><a href="https://en.wikipedia.org/wiki/Mortgage_calculator" rel="noopener" target="_blank">Mortgage calculator: the amortization formula and its derivation</a></li>
+        </ul>
+        <p class="meta" style="margin-top:14px">Estimates for planning. Your lender's loan estimate is the authority on your actual payment.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="../assets/charts.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, fmt, persist, store, save, csv, invalid, icon } = CT;
+  const form = $('#form');
+  const CURRENCIES = [['USD', 'US dollar'], ['EUR', 'Euro'], ['GBP', 'British pound'], ['CAD', 'Canadian dollar'], ['AUD', 'Australian dollar'], ['NZD', 'New Zealand dollar'], ['INR', 'Indian rupee'], ['JPY', 'Japanese yen'], ['CNY', 'Chinese yuan'], ['CHF', 'Swiss franc'], ['SGD', 'Singapore dollar'], ['MXN', 'Mexican peso'], ['BRL', 'Brazilian real'], ['ZAR', 'South African rand'], ['NGN', 'Nigerian naira'], ['PHP', 'Philippine peso'], ['KES', 'Kenyan shilling']];
+  $('#cur').innerHTML = CURRENCIES.map(([c, n]) => `<option value="${c}">${c} · ${n}</option>`).join('');
+  $('#csv').innerHTML = icon('download') + '<span>Download CSV</span>';
+
+  const now = new Date();
+  const next = LoanLogic.addMonths({ year: now.getFullYear(), month: now.getMonth() + 1 }, 1);
+  const pad2 = (n) => String(n).padStart(2, '0');
+  $('#start').value = `${next.year}-${pad2(next.month)}`;
+
+  const DEFAULTS = {};
+  $$('input, select', form).forEach((el) => { DEFAULTS[el.id] = el.type === 'radio' || el.type === 'checkbox' ? el.checked : el.value; });
+  const memory = persist(form, 'loan');
+
+  const css = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+  const symbolOf = (cur) => { try { return new Intl.NumberFormat('en', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency').value; } catch (e) { return cur; } };
+  const monthName = (ym) => new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(ym.year, ym.month - 1, 1));
+
+  function setTermChips() {
+    const unit = $('#term-unit').value;
+    const opts = unit === 'years' ? [30, 20, 15, 10] : [36, 48, 60, 72];
+    $('#term-chips').innerHTML = opts.map((v) => `<button type="button" class="chip" data-term="${v}">${v} ${unit === 'years' ? 'yr' : 'mo'}</button>`).join('');
+  }
+
+  function read() {
+    const mode = $('input[name="mode"]:checked').value;
+    const cur = $('#cur').value;
+    const digits = CT.currencyDigits(cur);
+    let ok = true;
+    const get = (id, test, msg) => { const el = $('#' + id); const x = num(el); const bad = !test(x); invalid(el, bad ? msg : ''); if (bad) ok = false; return x; };
+    const unit = $('#term-unit').value;
+    const term = get('term', (x) => Number.isInteger(x) && x >= 1 && (unit === 'years' ? x <= 50 : x <= 600), unit === 'years' ? 'Enter whole years from 1 to 50.' : 'Enter whole months from 1 to 600.');
+    const months = unit === 'years' ? term * 12 : term;
+    const rate = get('rate', (x) => x >= 0 && x <= 100, 'Enter a rate from 0 to 100.');
+    let price = NaN, down = NaN, principal;
+    if (mode === 'mortgage') {
+      price = get('price', (x) => x > 0, 'Enter the price.');
+      down = get('down', (x) => x >= 0 && (!(price > 0) || x < price), 'The down payment must be less than the price.');
+      principal = price - down;
+      ['amount'].forEach((id) => invalid($('#' + id), ''));
+    } else {
+      principal = get('amount', (x) => x > 0, 'Enter the amount you are borrowing.');
+      ['price', 'down'].forEach((id) => invalid($('#' + id), ''));
+    }
+    const extra = get('extra', (x) => x >= 0, 'Enter 0 or more.');
+    const extraFrom = get('extra-from', (x) => Number.isInteger(x) && x >= 1, 'Enter a payment number, 1 or more.');
+    const lump = get('lump', (x) => x >= 0, 'Enter 0 or more.');
+    const lumpAt = get('lump-at', (x) => Number.isInteger(x) && x >= 1 && (!(months > 0) || x <= months), 'Enter a payment number within the term.');
+    const tax = mode === 'mortgage' ? get('tax', (x) => x >= 0, 'Enter 0 or more.') : 0;
+    const ins = mode === 'mortgage' ? get('ins', (x) => x >= 0, 'Enter 0 or more.') : 0;
+    const pmiRate = mode === 'mortgage' ? get('pmi', (x) => x >= 0 && x <= 5, 'Enter a rate from 0 to 5.') : 0;
+    const hoa = mode === 'mortgage' ? get('hoa', (x) => x >= 0, 'Enter 0 or more.') : 0;
+    const [sy, sm] = ($('#start').value || '').split('-').map(Number);
+    const start = sy && sm ? { year: sy, month: sm } : next;
+    return ok ? { mode, cur, digits, months, rate, price, down, principal, extra, extraFrom, lump, lumpAt, tax, ins, pmiRate, hoa, start } : null;
+  }
+
+  let last = null;
+  function render() {
+    const mode = $('input[name="mode"]:checked').value;
+    $$('[data-show]').forEach((el) => { el.hidden = el.getAttribute('data-show') !== mode; });
+    const cur = $('#cur').value;
+    $$('.sym').forEach((el) => { el.textContent = symbolOf(cur); });
+    // keep chips in sync with the values
+    const priceV = num($('#price')), downV = num($('#down'));
+    $$('#down-chips .chip').forEach((b) => b.setAttribute('aria-pressed', String(priceV > 0 && Math.abs(downV - priceV * b.dataset.pct / 100) < 0.5)));
+    $$('#term-chips .chip').forEach((b) => b.setAttribute('aria-pressed', String(num($('#term')) === Number(b.dataset.term))));
+
+    const inp = read();
+    const m = (v, d) => fmt.money(v, cur, d);
+    if (!inp) { blank(); return; }
+    const d0 = inp.digits ? 0 : 0; // whole units for headline totals
+    let sched, base, mort = null;
+    if (inp.mode === 'mortgage') {
+      mort = LoanLogic.mortgage({ price: inp.price, down: inp.down, rate: inp.rate, months: inp.months, taxYear: inp.tax, insYear: inp.ins, pmiRate: inp.pmiRate, hoa: inp.hoa, extra: inp.extra, extraFrom: inp.extraFrom, lump: inp.lump, lumpAt: inp.lumpAt, digits: inp.digits });
+      sched = mort.actual; base = mort.base;
+      $('#down-hint').textContent = `${fmt.num((inp.down / inp.price) * 100, 1)}% of the price, so the loan is ${m(mort.loan)}.`;
+      const esc = mort.tax + mort.ins + mort.pmi + mort.hoa;
+      $('#escrow-sum').textContent = esc > 0 ? `${m(esc)} a month` : '';
+    } else {
+      sched = LoanLogic.amortize({ principal: inp.principal, rate: inp.rate, months: inp.months, extra: inp.extra, extraFrom: inp.extraFrom, lump: inp.lump, lumpAt: inp.lumpAt, digits: inp.digits });
+      base = LoanLogic.amortize({ principal: inp.principal, rate: inp.rate, months: inp.months, digits: inp.digits });
+    }
+    last = { inp, sched, base, mort };
+    const paysExtra = inp.extra > 0 || inp.lump > 0;
+    const offYM = LoanLogic.addMonths(inp.start, sched.months - 1);
+    const baseOffYM = LoanLogic.addMonths(inp.start, base.months - 1);
+
+    // lead figure and the split of the first month's payment
+    const parts = [{ name: 'Principal & interest', v: sched.payment, colour: css('--data') }];
+    if (mort) {
+      const greys = [css('--muted'), css('--chart-muted'), css('--text'), css('--control')];
+      [['Property tax', mort.tax], ['Insurance', mort.ins], ['PMI', mort.pmi], ['HOA', mort.hoa]].forEach(([name, v], i) => { if (v > 0) parts.push({ name, v, colour: greys[i] }); });
+    }
+    const first = parts.reduce((a, p) => a + p.v, 0);
+    const firstR = Math.round(first * 10 ** inp.digits) / 10 ** inp.digits;
+    const leadEl = $('#lead');
+    leadEl.textContent = m(firstR + (paysExtra && inp.extraFrom === 1 ? inp.extra : 0));
+    if (paysExtra && inp.extraFrom === 1 && inp.extra > 0) leadEl.insertAdjacentHTML('beforeend', `<small>incl. ${m(inp.extra)} extra</small>`);
+    $('#lead-note').innerHTML = mort
+      ? (mort.pmi > 0 ? `PMI of <strong>${m(mort.pmi)}</strong> a month ends after payment ${mort.pmiMonths} (${monthName(LoanLogic.addMonths(inp.start, mort.pmiMonths - 1))}), when the balance reaches 78% of the price. From then on: <strong>${m(firstR - mort.pmi)}</strong>.`
+        : inp.down >= 0.2 * inp.price ? `With 20% or more down, there is no PMI.` : `No PMI included. Set a PMI rate to estimate it.`)
+      : `${inp.months} payments of ${m(sched.payment)}${sched.rows.length && Math.abs(sched.rows.at(-1).paid - sched.payment) >= 0.005 ? `, the last one ${m(sched.rows.at(-1).paid)}` : ''}.`;
+    const bar = $('#split-bar'), legend = $('#split-legend');
+    bar.hidden = legend.hidden = parts.length < 2;
+    bar.innerHTML = parts.map((p) => `<span style="flex-grow:${p.v};background:${p.colour}" title="${CT.esc(p.name)}"></span>`).join('');
+    legend.innerHTML = parts.map((p) => `<div><i class="swatch-dot" style="background:${p.colour}"></i><span class="name">${CT.esc(p.name)}</span><b>${m(p.v)}</b></div>`).join('');
+
+    // KPIs
+    $('#k-int').textContent = m(sched.totalInterest, 0);
+    $('#k-paid').textContent = m(sched.totalPaid, 0);
+    $('#k-off').innerHTML = `${monthName(offYM)}<small>${fmt.months(sched.months)}</small>`;
+    const k4l = $('#k-4-label'), k4 = $('#k-4');
+    if (paysExtra) {
+      k4l.textContent = 'Interest saved';
+      k4.className = 'kpi-value data';
+      k4.innerHTML = `${m(base.totalInterest - sched.totalInterest, 0)}<small>${base.months - sched.months > 0 ? fmt.months(base.months - sched.months) + ' sooner' : 'same end date'}</small>`;
+    } else {
+      const c = LoanLogic.crossover(sched.rows);
+      k4l.textContent = 'Principal passes interest';
+      k4.className = 'kpi-value';
+      k4.innerHTML = c ? `${monthName(LoanLogic.addMonths(inp.start, c - 1))}<small>payment ${c}</small>` : '<span class="dim">—</span>';
+    }
+
+    // the one-line finding under the title
+    const what = mort ? `a ${m(mort.loan, 0)} mortgage` : `${m(inp.principal, 0)}`;
+    let sentence = `Borrowing ${what} at ${fmt.smart(inp.rate, 3)}% over ${fmt.months(inp.months)} costs <strong>${m(sched.payment)}</strong> a month in principal and interest, and <strong>${m(base.totalInterest, 0)}</strong> in interest in total.`;
+    if (paysExtra && base.totalInterest - sched.totalInterest > 0) sentence = `Borrowing ${what} at ${fmt.smart(inp.rate, 3)}%: your extra payments cut the interest from ${m(base.totalInterest, 0)} to <strong>${m(sched.totalInterest, 0)}</strong> and finish ${fmt.months(base.months - sched.months)} sooner.`;
+    $('#finding').innerHTML = sentence;
+
+    // chart: principal and interest per loan year
+    const years = LoanLogic.byYear(sched.rows);
+    const cross = LoanLogic.crossover(sched.rows);
+    const crossYear = cross ? Math.ceil(cross / 12) : null;
+    const ann = crossYear && crossYear > 1 && crossYear < years.length ? [{ at: crossYear - 1, label: 'Principal passes interest', short: 'Crossover' }] : [];
+    Charts.stacked($('#ch-years'), {
+      labels: years.map((y) => String(y.year)),
+      series: [{ name: 'Principal', values: years.map((y) => y.principal) }, { name: 'Interest', values: years.map((y) => y.interest) }],
+      format: (v) => m(v, 0), tickFormat: (v) => compact(v, cur), height: 230, annotations: ann, legend: '#lg-years',
+      xAt: years.length > 12 ? years.map((y, i) => (y.year === 1 || y.year % 5 === 0 ? i : -1)).filter((i) => i >= 0) : null,
+    });
+    const y1 = years[0];
+    $('#years-note').innerHTML = y1 ? `In year 1, <strong>${fmt.num((y1.interest / y1.paid) * 100, 0)}%</strong> of what you pay is interest${years.length > 1 ? `; by year ${years.length} it is ${fmt.num((years.at(-1).interest / years.at(-1).paid) * 100, 0)}%` : ''}.${cross ? ` From payment ${cross}, more of each payment goes to the loan than to interest.` : ''}` : '';
+
+    // chart: balance, with the original schedule in grey when paying extra
+    const labels = base.rows.map((r) => monthName(LoanLogic.addMonths(inp.start, r.n - 1)));
+    const series = [{ name: paysExtra ? 'With extra payments' : 'Balance', values: base.rows.map((r, i) => (i < sched.rows.length ? sched.rows[i].balance : null)) }];
+    if (paysExtra) series.push({ name: 'Original schedule', values: base.rows.map((r) => r.balance), colour: css('--chart-muted') });
+    if (paysExtra) { // the paid-off point drops to zero
+      const i = sched.rows.length; if (i < base.rows.length) series[0].values[i - 1] = 0;
+    }
+    Charts.line($('#ch-bal'), { labels, series, format: (v) => m(v, 0), tickFormat: (v) => compact(v, cur), height: 200, legend: '#lg-bal' });
+    if (!paysExtra) $('#lg-bal').innerHTML = '';
+
+    renderTable();
+  }
+
+  function compact(v, cur) {
+    try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, notation: 'compact', maximumFractionDigits: 1 }).format(v); } catch (e) { return fmt.num(v); }
+  }
+
+  function renderTable() {
+    if (!last) return;
+    const { inp, sched } = last;
+    const m = (v) => fmt.money(v, inp.cur);
+    const view = $('input[name="view"]:checked').value;
+    const thead = $('#sched thead'), tbody = $('#sched tbody');
+    const hasExtra = sched.totalExtra > 0;
+    if (view === 'year') {
+      thead.innerHTML = `<tr><th>Loan year</th><th class="n">Payments</th><th class="n">Principal</th>${hasExtra ? '<th class="n">of which extra</th>' : ''}<th class="n">Interest</th><th class="n">Balance at end</th></tr>`;
+      tbody.innerHTML = LoanLogic.byYear(sched.rows).map((y) => {
+        const a = LoanLogic.addMonths(inp.start, (y.year - 1) * 12), b = LoanLogic.addMonths(inp.start, (y.year - 1) * 12 + y.payments - 1);
+        return `<tr><td>Year ${y.year}<span class="sub">${monthName(a)} – ${monthName(b)}</span></td><td class="n">${y.payments}</td><td class="n">${m(y.principal)}</td>${hasExtra ? `<td class="n">${y.extra ? m(y.extra) : '<span class="dim">—</span>'}</td>` : ''}<td class="n">${m(y.interest)}</td><td class="n">${m(y.balance)}</td></tr>`;
+      }).join('') + `<tr class="year-row"><td>Total</td><td class="n">${sched.months}</td><td class="n">${m(sched.totalPrincipal)}</td>${hasExtra ? `<td class="n">${m(sched.totalExtra)}</td>` : ''}<td class="n">${m(sched.totalInterest)}</td><td class="n"></td></tr>`;
+    } else {
+      thead.innerHTML = `<tr><th>Payment</th><th class="n">Paid</th><th class="n">Principal</th>${hasExtra ? '<th class="n">of which extra</th>' : ''}<th class="n">Interest</th><th class="n">Balance</th></tr>`;
+      tbody.innerHTML = sched.rows.map((r) => `<tr><td>${r.n}<span class="sub">${monthName(LoanLogic.addMonths(inp.start, r.n - 1))}</span></td><td class="n">${m(r.paid)}</td><td class="n">${m(r.principal)}</td>${hasExtra ? `<td class="n">${r.extra ? m(r.extra) : '<span class="dim">—</span>'}</td>` : ''}<td class="n">${m(r.interest)}</td><td class="n">${m(r.balance)}</td></tr>`).join('');
+    }
+  }
+
+  function blank() {
+    last = null;
+    ['#lead', '#k-int', '#k-paid', '#k-off', '#k-4'].forEach((s) => { $(s).innerHTML = '<span class="dim">—</span>'; });
+    $('#lead-note').textContent = 'Fix the highlighted fields to see your payment.';
+    $('#split-bar').hidden = $('#split-legend').hidden = true;
+    $('#years-note').textContent = '';
+    $('#sched tbody').innerHTML = '';
+  }
+
+  form.addEventListener('input', render);
+  form.addEventListener('change', (e) => { if (e.target.id === 'term-unit') { const t = $('#term'), v = num(t); if (Number.isInteger(v)) t.value = e.target.value === 'months' ? v * 12 : Math.max(1, Math.round(v / 12)); setTermChips(); } render(); });
+  form.addEventListener('submit', (e) => e.preventDefault());
+  $('#down-chips').addEventListener('click', (e) => { const b = e.target.closest('[data-pct]'); if (!b) return; const p = num($('#price')); if (p > 0) { $('#down').value = Math.round((p * b.dataset.pct) / 100); form.dispatchEvent(new Event('input')); } });
+  $('#term-chips').addEventListener('click', (e) => { const b = e.target.closest('[data-term]'); if (!b) return; $('#term').value = b.dataset.term; form.dispatchEvent(new Event('input')); });
+  $$('input[name="view"]').forEach((r) => r.addEventListener('change', renderTable));
+  $('#reset').addEventListener('click', () => {
+    memory.clear();
+    $$('input, select', form).forEach((el) => { if (!(el.id in DEFAULTS)) return; if (el.type === 'radio' || el.type === 'checkbox') el.checked = DEFAULTS[el.id]; else el.value = DEFAULTS[el.id]; });
+    setTermChips(); render(); CT.toast('Reset to the example');
+  });
+  $('#csv').addEventListener('click', () => {
+    if (!last) { CT.toast('Fix the highlighted fields first'); return; }
+    const { inp, sched } = last;
+    const d = inp.digits;
+    const rows = [['Payment', 'Month', 'Paid', 'Principal', 'Extra principal', 'Interest', 'Balance']].concat(sched.rows.map((r) => {
+      const ym = LoanLogic.addMonths(inp.start, r.n - 1);
+      return [r.n, `${ym.year}-${pad2(ym.month)}`, r.paid.toFixed(d), r.principal.toFixed(d), r.extra.toFixed(d), r.interest.toFixed(d), r.balance.toFixed(d)];
+    }));
+    save('amortization-schedule.csv', csv(rows), 'text/csv');
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render);
+
+  setTermChips();
+  render();
+})();
+</script>
+</body>
+</html>

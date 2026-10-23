@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Emergency Info Card</title>
+<meta name="description" content="Make a phone lock-screen image and a wallet card with your allergies, conditions, medications and emergency contacts. Made on your device; nothing is uploaded.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#d0262c">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .contact { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.3fr); gap: 8px; }
+  .previews { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px; align-items: start; }
+  .phone { width: 250px; aspect-ratio: 1179 / 2556; border-radius: 36px; padding: 9px; background: #1a1c20; box-shadow: 0 0 0 1px var(--border); max-width: 100%; }
+  .phone canvas { width: 100%; height: 100%; border-radius: 28px; display: block; background: #111316; }
+  .card-prev canvas { width: 100%; max-width: 420px; height: auto; aspect-ratio: 1011 / 638; border-radius: 12px; box-shadow: 0 0 0 1px var(--border); display: block; }
+  .side-stack { display: grid; gap: 16px; align-content: start; }
+  .how { display: grid; gap: 8px; font-size: 14px; }
+  .how b { font-weight: 600; }
+  @media (max-width: 760px) { .previews { grid-template-columns: minmax(0, 1fr); justify-items: center; } .contact { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .contact .ph { grid-column: 1 / -1; } }
+</style>
+</head>
+<body data-tool="ice">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Health &amp; safety</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Emergency Info Card</h1>
+      <p class="sub">If you cannot speak for yourself, paramedics and bystanders can read this from your lock screen or wallet. It is made on this device and never uploaded.</p>
+    </div>
+    <div class="title-actions no-print"><button class="btn ghost" type="button" id="clear">Clear the form</button></div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-5 form" id="form" novalidate autocomplete="off">
+      <div class="notice" id="example-note"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11M8 5v.01"/></svg><p>These are example details. Replace them with yours.</p></div>
+      <div class="form-row">
+        <div class="field"><label for="name">Full name</label><input class="input" id="name" value="Alex Rivera"></div>
+        <div class="field"><label for="dob">Date of birth</label><input class="input" type="date" id="dob" value="1985-03-14"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label for="blood">Blood type</label><select class="input" id="blood"></select></div>
+        <div class="field"><label for="lang">Language spoken</label><input class="input" id="lang" value="English, Spanish"></div>
+      </div>
+      <div class="field"><label for="allergies">Allergies</label><textarea class="input" id="allergies" rows="2">Penicillin (rash, swelling). Peanuts.</textarea></div>
+      <div class="field"><label for="conditions">Medical conditions</label><textarea class="input" id="conditions" rows="2">Type 1 diabetes, asthma</textarea></div>
+      <div class="field"><label for="medications">Medications</label><textarea class="input" id="medications" rows="2">Insulin pump, salbutamol inhaler</textarea></div>
+      <div class="field"><label for="notes">Other information</label><textarea class="input" id="notes" rows="2" placeholder="For example: organ donor, implants, pacemaker">Registered organ donor</textarea></div>
+      <div class="field">
+        <span class="label">Emergency contacts</span>
+        <div class="erows" id="contacts">
+          <div class="contact"><input class="input" id="c1n" value="Sam Rivera" aria-label="Contact 1 name" placeholder="Name"><input class="input" id="c1r" value="Partner" aria-label="Contact 1 relationship" placeholder="Relationship"><input class="input ph" id="c1p" type="tel" value="+1 555 010 0199" aria-label="Contact 1 phone" placeholder="Phone"></div>
+          <div class="contact"><input class="input" id="c2n" value="Dr. Jordan Lee" aria-label="Contact 2 name" placeholder="Name"><input class="input" id="c2r" value="Doctor" aria-label="Contact 2 relationship" placeholder="Relationship"><input class="input ph" id="c2p" type="tel" value="+1 555 010 0123" aria-label="Contact 2 phone" placeholder="Phone"></div>
+          <div class="contact"><input class="input" id="c3n" aria-label="Contact 3 name" placeholder="Name"><input class="input" id="c3r" aria-label="Contact 3 relationship" placeholder="Relationship"><input class="input ph" id="c3p" type="tel" aria-label="Contact 3 phone" placeholder="Phone"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="size">Phone screen</label>
+        <select class="input" id="size"><option value="1179x2556">iPhone (1179 × 2556)</option><option value="1290x2796">Large iPhone (1290 × 2796)</option><option value="1080x2400">Android (1080 × 2400)</option><option value="1440x3120">Large Android (1440 × 3120)</option></select>
+      </div>
+      <label class="check"><input type="checkbox" id="remember" data-no-persist><span>Remember these details in this browser, so I can update the card later</span></label>
+    </form>
+
+    <div class="span-7 stack">
+      <section class="panel" aria-labelledby="h-prev">
+        <header><h2 id="h-prev">Your lock screen and wallet card</h2><span class="meta" id="fit-note"></span></header>
+        <div class="previews">
+          <div class="phone"><canvas id="lock" aria-label="Lock screen preview"></canvas></div>
+          <div class="side-stack">
+            <div class="btns" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button" id="save-lock"></button><button class="btn" type="button" id="save-card"></button></div>
+            <div class="card-prev"><canvas id="card" width="1011" height="638" aria-label="Wallet card preview"></canvas></div>
+            <p class="meta">The wallet card is 85.6 × 54 mm, credit-card size, at 300 dots per inch. Print it at 100% scale.</p>
+          </div>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="h-how">
+        <header><h2 id="h-how">Put it where it helps</h2></header>
+        <div class="how">
+          <p><b>Lock screen.</b> Save the image, then set it as your lock-screen wallpaper in your phone's settings. The details sit below the clock and above the bottom buttons.</p>
+          <p><b>Also fill in your phone's built-in medical record.</b> iPhone: Health app › Medical ID, with "Show When Locked" on. Android: look for Medical information or Emergency information in Settings (the location varies by phone maker). Emergency workers are trained to check these.</p>
+          <p><b>Keep it current.</b> Update the card when your medicines or contacts change.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this works</h2>
+        <p>Both images are drawn in your browser on a canvas and saved straight to your device. Allergies come first because they matter most when someone is about to be given medicine. If the text is too long to fit, the font shrinks a little and, if it still does not fit, the end of a section is cut with "…" and a note appears above the preview.</p>
+        <p>Your details are not stored anywhere unless you tick "Remember these details", which keeps them only in this browser's local storage. Anyone who can see your lock screen can read the card, so include only what you are happy for a stranger to see.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://support.apple.com/en-us/105072" rel="noopener" target="_blank">Apple: Set up your Medical ID in the Health app on your iPhone</a></li>
+          <li><a href="https://support.google.com/android/answer/9319337" rel="noopener" target="_blank">Google: Get help during an emergency with your Android phone (adding emergency info)</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, store, icon } = CT;
+  const I = ICELogic;
+  $('#blood').innerHTML = I.BLOOD.map((b) => `<option value="${b}">${b || 'Not known'}</option>`).join('');
+  $('#blood').value = 'A+';
+  $('#save-lock').innerHTML = icon('download') + '<span>Save lock screen</span>';
+  $('#save-card').innerHTML = icon('download') + '<span>Save wallet card</span>';
+  const FIELDS = ['name', 'dob', 'blood', 'lang', 'allergies', 'conditions', 'medications', 'notes', 'c1n', 'c1r', 'c1p', 'c2n', 'c2r', 'c2p', 'c3n', 'c3r', 'c3p', 'size'];
+  const saved = store.get('ice:data', null);
+  if (saved) { FIELDS.forEach((k) => { if (k in saved) $('#' + k).value = saved[k]; }); $('#remember').checked = true; $('#example-note').hidden = true; }
+  const FONT = '"Chivo", "Segoe UI", system-ui, sans-serif';
+  const RED = '#d92d20', WHITE = '#ffffff', GREY = '#a9b0ba', INK = '#111316';
+
+  function data() {
+    const v = (k) => $('#' + k).value.trim();
+    return {
+      name: v('name'), dob: v('dob'), blood: v('blood'), lang: v('lang'), allergies: v('allergies'), conditions: v('conditions'), medications: v('medications'), notes: v('notes'),
+      contacts: [1, 2, 3].map((i) => ({ name: v(`c${i}n`), relation: v(`c${i}r`), phone: v(`c${i}p`) })),
+    };
+  }
+  const dobText = (dob) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob); if (!m) return '';
+    const dt = { y: +m[1], m: +m[2], d: +m[3] };
+    const now = new Date();
+    const a = I.age(dt, { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() });
+    const shown = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(dt.y, dt.m - 1, dt.d)));
+    return `Born ${shown}${a >= 0 && a < 130 ? ` · age ${a}` : ''}`;
+  };
+
+  /* Lay out and draw the lock screen. Returns true if anything was cut. */
+  function drawLock(cv, W, H, d) {
+    cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    for (let scale = 1; scale >= 0.7; scale -= 0.05) {
+      const r = layoutLock(g, W, H, d, scale, true);
+      if (r.fits || scale <= 0.71) { layoutLock(g, W, H, d, scale, false); return r.truncated || !r.fits; }
+    }
+    return false;
+  }
+  function layoutLock(g, W, H, d, s, dry) {
+    const px = W * 0.08, maxW = W - px * 2;
+    const top = H * 0.36, bottom = H * 0.86;
+    let y = top, truncated = false;
+    const f = (size, weight) => { g.font = `${weight || 400} ${Math.round(size * s)}px ${FONT}`; };
+    const meas = (t) => g.measureText(t).width;
+    if (!dry) { g.fillStyle = INK; g.fillRect(0, 0, W, H); }
+    // header pill
+    f(W * 0.038, 700);
+    const label = 'In case of emergency';
+    const pw = meas(label) + W * 0.07, ph = W * 0.08 * s;
+    if (!dry) { g.fillStyle = RED; roundRect(g, px, y, pw, ph, ph / 2); g.fill(); g.fillStyle = WHITE; g.textBaseline = 'middle'; g.fillText(label, px + W * 0.035, y + ph / 2); g.textBaseline = 'alphabetic'; }
+    y += ph + W * 0.05 * s;
+    // name + blood
+    f(W * 0.088, 700);
+    const bloodW = d.blood ? W * 0.17 : 0;
+    const nameFit = I.fit(d.name || 'Your name', maxW - bloodW - (d.blood ? W * 0.03 : 0), 2, meas);
+    truncated = truncated || nameFit.truncated;
+    const nameLH = W * 0.102 * s;
+    nameFit.lines.forEach((ln, i) => { if (!dry) { g.fillStyle = WHITE; g.fillText(ln, px, y + nameLH * (i + 0.8)); } });
+    if (d.blood && !dry) {
+      const bx = W - px - bloodW, by = y;
+      g.fillStyle = 'rgba(217,45,32,0.18)'; roundRect(g, bx, by, bloodW, W * 0.13 * s, W * 0.02); g.fill();
+      g.fillStyle = '#ff8a7a'; f(W * 0.026, 600); g.fillText('Blood', bx + W * 0.025, by + W * 0.042 * s);
+      g.fillStyle = WHITE; f(W * 0.058, 700); g.fillText(d.blood, bx + W * 0.025, by + W * 0.108 * s);
+    }
+    y += nameLH * nameFit.lines.length + W * 0.012 * s;
+    f(W * 0.041, 400);
+    const sub = [dobText(d.dob), d.lang ? `Speaks ${d.lang}` : ''].filter(Boolean);
+    sub.forEach((t) => { const line = I.fit(t, maxW - bloodW, 1, meas).lines[0]; if (!dry) { g.fillStyle = GREY; g.fillText(line, px, y + W * 0.045 * s); } y += W * 0.058 * s; });
+    y = Math.max(y, top + ph + W * 0.05 * s + W * 0.15 * s) + W * 0.035 * s;
+    // sections
+    for (const sec of I.sections(d)) {
+      f(W * 0.035, 600);
+      if (!dry) { g.fillStyle = sec.alert ? '#ff8a7a' : GREY; g.fillText(sec.label, px, y + W * 0.035 * s); }
+      y += W * 0.052 * s;
+      f(W * 0.05, sec.alert ? 600 : 400);
+      const r = I.fit(sec.value, maxW, 3, meas); truncated = truncated || r.truncated;
+      r.lines.forEach((ln) => { if (!dry) { g.fillStyle = WHITE; g.fillText(ln, px, y + W * 0.05 * s); } y += W * 0.064 * s; });
+      y += W * 0.03 * s;
+    }
+    // contacts
+    const cs = I.contacts(d);
+    if (cs.length) {
+      if (!dry) { g.fillStyle = 'rgba(255,255,255,0.14)'; g.fillRect(px, y, maxW, Math.max(1, W * 0.002)); }
+      y += W * 0.035 * s;
+      f(W * 0.035, 600); if (!dry) { g.fillStyle = GREY; g.fillText('Emergency contacts', px, y + W * 0.035 * s); }
+      y += W * 0.05 * s;
+      for (const c of cs) {
+        f(W * 0.042, 500);
+        const who = I.fit([c.name, c.relation ? `(${c.relation})` : ''].filter(Boolean).join(' '), maxW, 1, meas).lines[0];
+        if (!dry) { g.fillStyle = GREY; g.fillText(who, px, y + W * 0.042 * s); }
+        y += W * 0.056 * s;
+        f(W * 0.066, 600);
+        if (!dry) { g.fillStyle = WHITE; g.fillText(c.phone || '', px, y + W * 0.064 * s); }
+        y += W * 0.092 * s;
+      }
+    }
+    return { fits: y <= bottom, truncated };
+  }
+
+  function drawCard(cv, d) {
+    const W = 1011, H = 638, g = cv.getContext('2d');
+    const meas = (t) => g.measureText(t).width;
+    let cut = false;
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    g.fillStyle = RED; g.fillRect(0, 0, W, 92);
+    g.fillStyle = WHITE; g.font = `700 40px ${FONT}`; g.textBaseline = 'middle'; g.fillText('Emergency medical information', 40, 47); g.textBaseline = 'alphabetic';
+    const px = 40, colW = W - px * 2;
+    let y = 150;
+    g.fillStyle = INK; g.font = `700 44px ${FONT}`;
+    const nm = I.fit(d.name || 'Your name', colW - 200, 1, meas); cut = cut || nm.truncated; g.fillText(nm.lines[0], px, y);
+    if (d.blood) { g.fillStyle = RED; g.font = `700 44px ${FONT}`; const t = d.blood; g.fillText(t, W - px - meas(t), y); g.fillStyle = '#5c6470'; g.font = `500 22px ${FONT}`; g.fillText('Blood', W - px - meas('Blood'), y - 46); }
+    y += 40; g.fillStyle = '#5c6470'; g.font = `400 26px ${FONT}`; g.fillText(I.fit([dobText(d.dob), d.lang ? `Speaks ${d.lang}` : ''].filter(Boolean).join('  ·  '), colW, 1, meas).lines[0] || '', px, y);
+    y += 50;
+    const secs = I.sections(d);
+    for (const sec of secs) {
+      if (y > H - 150) { cut = true; break; }
+      g.font = `600 22px ${FONT}`; g.fillStyle = sec.alert ? RED : '#5c6470'; g.fillText(sec.label, px, y);
+      g.font = `${sec.alert ? 600 : 400} 27px ${FONT}`; g.fillStyle = INK;
+      const r = I.fit(sec.value, colW - 230, 1, meas); cut = cut || r.truncated; g.fillText(r.lines[0], px + 230, y);
+      y += 44;
+    }
+    const cs = I.contacts(d).slice(0, 2);
+    if (cs.length) {
+      y = Math.max(y, H - 60 - cs.length * 40);
+      g.fillStyle = '#e1e4e9'; g.fillRect(px, y - 34, colW, 2);
+      cs.forEach((c) => { g.font = `600 26px ${FONT}`; g.fillStyle = INK; const who = I.fit([c.name, c.relation ? `(${c.relation})` : ''].filter(Boolean).join(' '), colW - 330, 1, meas).lines[0]; g.fillText(who, px, y + 2); g.font = `600 28px ${FONT}`; g.fillText(c.phone, W - px - meas(c.phone), y + 2); y += 40; });
+      if (I.contacts(d).length > 2) cut = true;
+    }
+    return cut;
+  }
+  function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+
+  function render() {
+    const d = data();
+    const [W, H] = $('#size').value.split('x').map(Number);
+    $('.phone').style.aspectRatio = `${W} / ${H}`;
+    const a = drawLock($('#lock'), W, H, d);
+    const b = drawCard($('#card'), d);
+    $('#fit-note').textContent = a || b ? `Some text was shortened to fit the ${a && b ? 'lock screen and card' : a ? 'lock screen' : 'card'}.` : '';
+    if ($('#remember').checked) { const o = {}; FIELDS.forEach((k) => { o[k] = $('#' + k).value; }); store.set('ice:data', o); }
+  }
+
+  $('#form').addEventListener('input', () => { $('#example-note').hidden = true; render(); });
+  $('#form').addEventListener('change', (e) => { if (e.target.id === 'remember' && !e.target.checked) store.remove('ice:data'); render(); });
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#clear').addEventListener('click', () => { FIELDS.filter((k) => k !== 'size').forEach((k) => { $('#' + k).value = ''; }); $('#blood').value = ''; $('#example-note').hidden = true; render(); });
+  $('#save-lock').addEventListener('click', () => $('#lock').toBlob((b) => CT.save('emergency-lock-screen.png', b, 'image/png'), 'image/png'));
+  $('#save-card').addEventListener('click', () => $('#card').toBlob((b) => CT.save('emergency-wallet-card.png', b, 'image/png'), 'image/png'));
+  render();
+  if (document.fonts) document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>

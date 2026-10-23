@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Readability Checker</title>
+<meta name="description" content="Flesch Reading Ease, Flesch–Kincaid grade level, word count, reading time, and the long sentences that make text hard to read. Free and private: your text never leaves the page.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#e9479f">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  textarea.input.big { min-height: 220px; font-size: 16px; line-height: 1.6; }
+  .preview { font-size: 16px; line-height: 1.75; max-width: 75ch; }
+  .preview p + p { margin-top: 12px; }
+  .preview mark { color: inherit; border-radius: 3px; padding: 1px 0; }
+  .preview mark.long { background: var(--pill-warning-bg); box-shadow: inset 0 0 0 1px var(--notice-border); }
+  .preview mark.vlong { background: var(--pill-negative-bg); }
+  .preview .cx { text-decoration: underline; text-decoration-color: var(--data); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .keyrow { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .keyrow i { display: inline-block; width: 14px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  .gauge { margin-top: 16px; }
+  .gauge-track { position: relative; height: 12px; border-radius: 999px; display: flex; overflow: hidden; gap: 2px; }
+  .gauge-track span { height: 100%; background: var(--raised); }
+  .gauge-track span.on { background: var(--data); }
+  .gauge-mark { position: relative; height: 0; }
+  .gauge-mark i { position: absolute; top: -18px; width: 2px; height: 24px; background: var(--text); transform: translateX(-50%); transition: left var(--t-ui) var(--ease-out); }
+  .gauge-ticks { position: relative; height: 18px; margin-top: 8px; font-family: var(--font-fig); font-size: 12px; color: var(--muted); }
+  .gauge-ticks span { position: absolute; transform: translateX(-50%); }
+  @media (max-width: 520px) { .gauge-ticks .t-wide { display: none; } }
+  .countgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
+  .countgrid .kpi { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .countgrid .kpi:nth-last-child(-n + 2) { border-bottom: 0; }
+  .countgrid .kpi-value { font-size: 17px; }
+  .tips { display: grid; gap: 8px; font-size: 14px; padding-left: 1.1em; }
+</style>
+</head>
+<body data-tool="readability">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Work &amp; study</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Readability Checker</h1>
+      <p class="sub" id="finding">Paste any English text to see how easy it is to read and which sentences to shorten.</p>
+    </div>
+    <div class="title-actions"><button class="btn ghost" type="button" id="clear">Clear</button></div>
+  </div>
+
+  <div class="grid">
+    <div class="span-7 stack">
+      <section class="panel" aria-labelledby="h-text">
+        <header><h2 id="h-text">Your text</h2><span class="meta" id="count-meta"></span></header>
+        <label class="sr-only" for="text">Text to check</label>
+        <textarea class="input big" id="text" spellcheck="true"></textarea>
+        <p class="hint" style="margin-top:8px">The example is a made-up public notice. Your text is not saved or sent anywhere.</p>
+      </section>
+      <section class="panel" aria-labelledby="h-prev">
+        <header><h2 id="h-prev">Where it gets hard</h2></header>
+        <div class="preview" id="preview"></div>
+        <div class="keyrow"><span><i style="background:var(--pill-warning-bg);box-shadow:0 0 0 1px var(--notice-border)"></i>Long sentence (over 25 words)</span><span><i style="background:var(--pill-negative-bg)"></i>Very long (over 35 words)</span><span><i style="background:none;border-bottom:2px solid var(--data);border-radius:0;height:8px"></i>Word of 3+ syllables</span></div>
+      </section>
+    </div>
+
+    <div class="span-5 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Flesch Reading Ease</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="gauge" aria-hidden="true">
+          <div class="gauge-mark"><i id="gauge-i"></i></div>
+          <div class="gauge-track" id="gauge-track"></div>
+          <div class="gauge-ticks"><span style="left:0;transform:none">0</span><span style="left:30%">30</span><span style="left:50%">50</span><span class="t-wide" style="left:60%">60</span><span style="left:70%">70</span><span style="left:80%">80</span><span class="t-wide" style="left:90%">90</span><span style="left:100%;transform:translateX(-100%)">100</span></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">Grade level</div><div class="kpi-value" id="k-grade">—</div></div>
+          <div class="kpi"><div class="kpi-label">Words per sentence</div><div class="kpi-value" id="k-wps">—</div></div>
+          <div class="kpi"><div class="kpi-label">Reading time</div><div class="kpi-value" id="k-time">—</div></div>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="h-len">
+        <header><h2 id="h-len">Sentence lengths</h2><span class="meta">Words in each sentence</span></header>
+        <div class="chart" id="ch-len"></div>
+      </section>
+      <section class="panel" aria-labelledby="h-counts">
+        <header><h2 id="h-counts">Counts</h2></header>
+        <div class="countgrid" id="counts"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <div class="formula">Reading Ease = 206.835 − 1.015 × (words ÷ sentences) − 84.6 × (syllables ÷ words)
+Grade level  = 0.39 × (words ÷ sentences) + 11.8 × (syllables ÷ words) − 15.59</div>
+        <p>Reading Ease runs from about 0 (very hard) to 100 (very easy); 60 to 70 is plain English. Grade level is the US school grade that can usually follow the text. Both reward short sentences and short words, and neither knows whether the text makes sense.</p>
+        <p>Syllables are counted with spelling rules plus a list of common exceptions, which agrees with dictionaries on about 9 words in 10. Every automatic readability checker estimates syllables, which is why tools give slightly different scores for the same text. Reading time assumes 238 words a minute, the average for silent reading of non-fiction found in a 2019 review of 190 studies.</p>
+        <h3>Making text easier</h3>
+        <ul class="tips">
+          <li>Keep most sentences short; plain-language guides suggest an average of about 20 words or fewer.</li>
+          <li>Use common, short words: "use" rather than "utilize", "help" rather than "facilitate".</li>
+          <li>Say who does what, in the active voice: "We will send your card" rather than "Your card will be sent".</li>
+        </ul>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://doi.org/10.1037/h0057532" rel="noopener" target="_blank">Flesch, R. (1948). A new readability yardstick. Journal of Applied Psychology.</a></li>
+          <li><a href="https://stars.library.ucf.edu/istlibrary/56/" rel="noopener" target="_blank">Kincaid et al. (1975). Derivation of new readability formulas for Navy enlisted personnel.</a></li>
+          <li><a href="https://doi.org/10.1016/j.jml.2019.104047" rel="noopener" target="_blank">Brysbaert, M. (2019). How many words do we read per minute? Journal of Memory and Language.</a></li>
+          <li><a href="https://digital.gov/guides/plain-language" rel="noopener" target="_blank">Digital.gov: Plain language guide series (formerly plainlanguage.gov)</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="../assets/charts.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, fmt, esc } = CT;
+  const R = ReadLogic;
+  const SAMPLE = `Residents are hereby notified that, in accordance with the provisions set forth in the municipal water conservation ordinance, the utilization of potable water for the purposes of lawn irrigation is prohibited between the hours of 10 a.m. and 6 p.m. on all days of the week. Watering is allowed early in the morning. Please call the city if you have questions.
+
+Failure to comply with these restrictions may result in the issuance of a written warning, which will be followed by monetary penalties for subsequent violations of the ordinance as determined by the department. Thank you for helping us save water.`;
+  $('#text').value = SAMPLE;
+  const BANDS = [[0, 30], [30, 50], [50, 60], [60, 70], [70, 80], [80, 90], [90, 100]];
+
+  function render() {
+    const text = $('#text').value;
+    const a = R.analyze(text);
+    $('#count-meta').textContent = `${a.words.toLocaleString()} words`;
+    if (!a.words) {
+      $('#lead').innerHTML = '<span class="dim">—</span>'; $('#lead-note').textContent = 'Paste some text to begin.';
+      ['#k-grade', '#k-wps', '#k-time'].forEach((s) => { $(s).innerHTML = '<span class="dim">—</span>'; });
+      $('#preview').innerHTML = '<div class="empty">Your text appears here with long sentences highlighted.</div>'; $('#ch-len').innerHTML = ''; $('#counts').innerHTML = ''; return;
+    }
+    const ease = a.ease, band = R.easeBand(ease);
+    const shown = Math.max(0, Math.min(100, ease));
+    $('#lead').innerHTML = `${fmt.num(ease, 0)}<small>of 100</small>`;
+    $('#lead-note').innerHTML = `<strong>${band.label}</strong>, about ${band.school} level${ease > 100 || ease < 0 ? ' (scores can run past 0–100 for extreme text)' : ''}.`;
+    $('#gauge-track').innerHTML = BANDS.map(([lo, hi]) => `<span class="${shown >= lo && (shown < hi || (hi === 100 && shown === 100)) ? 'on' : ''}" style="width:${hi - lo}%"></span>`).join('');
+    $('#gauge-i').style.left = shown + '%';
+    $('#k-grade').innerHTML = `${fmt.num(Math.max(0, a.grade), 1)}<small>US grade</small>`;
+    $('#k-wps').innerHTML = `${fmt.num(a.avgSentence, 1)}<small>${a.longSentences} long ${a.longSentences === 1 ? 'sentence' : 'sentences'}</small>`;
+    const mins = a.readingMinutes;
+    $('#k-time').innerHTML = mins < 1 ? `${Math.max(1, Math.round(mins * 60))} s` : `${fmt.num(mins, mins < 10 ? 1 : 0)} min`;
+    $('#finding').innerHTML = `Reading ease <strong>${fmt.num(ease, 0)}</strong> (${band.label.toLowerCase()}), grade level ${fmt.num(Math.max(0, a.grade), 1)}. ${a.longSentences ? `${a.longSentences} of ${a.sentences} sentences run over 25 words.` : 'No sentence runs over 25 words.'}`;
+    // highlighted preview, paragraph by paragraph, sentence by sentence
+    const paras = text.split(/\n\s*\n/).filter((p) => p.trim());
+    $('#preview').innerHTML = paras.map((p) => '<p>' + R.sentences(p).map((s) => {
+      const n = R.words(s).length;
+      const body = esc(s).replace(/[A-Za-zÀ-ɏ]+(?:['’-][A-Za-zÀ-ɏ]+)*/g, (w) => (R.wordSyllables(w) >= 3 && !/-/.test(w) ? `<span class="cx">${w}</span>` : w));
+      return n > 35 ? `<mark class="vlong" title="${n} words">${body}</mark>` : n > 25 ? `<mark class="long" title="${n} words">${body}</mark>` : body;
+    }).join(' ') + '</p>').join('');
+    // sentence length chart
+    const lens = a.perSentence.map((s) => s.words);
+    const css = (n) => getComputedStyle(document.body).getPropertyValue(n).trim();
+    Charts.bars($('#ch-len'), { labels: lens.map((_, i) => String(i + 1)), values: lens, highlight: lens.map((n, i) => (n > 25 ? i : -1)).filter((i) => i >= 0), colour: css('--negative'), mutedColour: css('--data'), reference: { value: 25, label: '25 words' }, height: 170, format: (v) => `${v} words` });
+    const c = (k, v) => `<div class="kpi"><div class="kpi-label">${k}</div><div class="kpi-value">${v}</div></div>`;
+    $('#counts').innerHTML = c('Words', a.words.toLocaleString()) + c('Sentences', a.sentences.toLocaleString()) + c('Paragraphs', a.paragraphs.toLocaleString()) + c('Syllables per word', fmt.num(a.avgSyllables, 2)) + c('Characters', a.chars.toLocaleString()) + c('Without spaces', a.charsNoSpace.toLocaleString()) + c('Long words (3+ syllables)', fmt.pct(a.complexShare, 0)) + c('Long sentences', a.longSentences.toLocaleString());
+  }
+  $('#text').addEventListener('input', CT.debounce(render, 120));
+  $('#clear').addEventListener('click', () => { $('#text').value = ''; render(); $('#text').focus(); });
+  render();
+})();
+</script>
+</body>
+</html>

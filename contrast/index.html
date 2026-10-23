@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contrast Checker</title>
+<meta name="description" content="Check the WCAG 2.2 contrast ratio of text and interface colours, see a live preview, and get the nearest colours that pass AA and AAA. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#e9479f">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .pick { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; }
+  .pick input[type="color"] { width: 64px; height: 64px; padding: 4px; border-radius: 10px; }
+  .pick .input { font-family: var(--font-fig); font-size: 16px; text-transform: none; }
+  .swap { justify-self: start; }
+  .grades { display: grid; }
+  .grade { display: grid; grid-template-columns: 52px minmax(0, 1fr) 70px 76px; gap: 12px; align-items: center; min-height: 44px; padding: 8px 0; }
+  .grade + .grade { border-top: 1px solid var(--rule); }
+  .grade .lvl { font-weight: 600; font-family: var(--font-fig); }
+  .grade .what { color: var(--text); }
+  .grade .what small { display: block; color: var(--muted); font-size: 12.5px; }
+  .grade .need { font-family: var(--font-fig); color: var(--muted); text-align: right; font-size: 14px; }
+  .grade .pill { justify-self: end; }
+  .specimen { border-radius: var(--radius-card); padding: 28px; display: grid; gap: 14px; border: 1px solid var(--border); transition: background-color var(--t-ui) ease, color var(--t-ui) ease; }
+  .specimen h3 { font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  .specimen p { font-size: 16px; line-height: 1.55; max-width: 60ch; }
+  .specimen .small { font-size: 13px; }
+  .specimen .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .specimen .ui-btn { height: 38px; padding: 0 16px; border-radius: 6px; border: 2px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 600; }
+  .specimen .ui-input { height: 38px; width: 180px; border-radius: 6px; border: 2px solid currentColor; background: transparent; }
+  .specimen svg { width: 28px; height: 28px; }
+  .ladder { display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); gap: 3px; }
+  .rung { appearance: none; border: 0; padding: 0; cursor: pointer; display: grid; gap: 4px; background: none; color: var(--muted); font-size: 10.5px; font-family: var(--font-fig); text-align: center; }
+  .rung span.sw { display: block; height: 44px; border-radius: 4px; position: relative; box-shadow: inset 0 0 0 1px rgb(127 127 127 / 18%); }
+  .rung span.sw b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: var(--font); }
+  .rung[aria-current="true"] span.sw { outline: 2px solid var(--text); outline-offset: 2px; }
+  .rung:hover span.sw { transform: translateY(-2px); }
+  .rung span.sw { transition: transform var(--t-hover) var(--ease-out); }
+  .ladder-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; color: var(--muted); font-size: 13px; }
+  .fixes { display: grid; gap: 8px; }
+  .fixrow { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--radius-control); background: var(--raised); }
+  .fixrow .sw { width: 40px; height: 40px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(127 127 127 / 25%); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+  .fixrow .t b { font-family: var(--font-fig); font-weight: 500; }
+  .fixrow .t small { display: block; color: var(--muted); font-size: 12.5px; }
+  @media (max-width: 640px) {
+    .ladder { grid-template-columns: repeat(11, minmax(0, 1fr)); }
+    .rung:nth-child(even) { display: none; }
+    .grade { grid-template-columns: 44px minmax(0, 1fr) 70px; }
+    .grade .need { display: none; }
+  }
+</style>
+</head>
+<body data-tool="contrast">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Work &amp; study</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Contrast Checker</h1>
+      <p class="sub" id="finding">Check whether text and interface colours meet the WCAG 2.2 contrast minimums.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="span-5 stack" id="form" novalidate autocomplete="off">
+      <section class="panel form">
+        <div class="field">
+          <label for="fg-hex">Text colour</label>
+          <div class="pick"><input type="color" id="fg-pick" value="#1d5fbf" aria-label="Pick the text colour" data-no-persist><input class="input" id="fg-hex" value="#1D5FBF" spellcheck="false"></div>
+        </div>
+        <button class="btn sm swap" type="button" id="swap"></button>
+        <div class="field">
+          <label for="bg-hex">Background colour</label>
+          <div class="pick"><input type="color" id="bg-pick" value="#f2f4f7" aria-label="Pick the background colour" data-no-persist><input class="input" id="bg-hex" value="#F2F4F7" spellcheck="false"></div>
+        </div>
+        <p class="hint">Type any CSS colour: #hex, rgb(), hsl() or a name like <span class="mono">navy</span>. A translucent text colour is blended onto the background first.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-fixes">
+        <header><h2 id="h-fixes">Nearest passing colours</h2><span class="meta">Same hue, smallest change</span></header>
+        <div class="fixes" id="fixes"></div>
+      </section>
+    </form>
+
+    <div class="span-7 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Contrast ratio</span>
+          <span class="lead-value" id="lead">—</span>
+        </div>
+        <div class="grades" id="grades" style="margin-top:12px"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-spec">
+        <header><h2 id="h-spec">Preview</h2><span class="meta" id="spec-meta"></span></header>
+        <div class="specimen" id="specimen">
+          <h3>Large heading, 28 px</h3>
+          <p>Body text at 16 px. Most people read this size every day, so it needs 4.5 to 1 to meet AA.</p>
+          <p class="small">Small print at 13 px is harder still. Captions, footnotes and form hints often fail first.</p>
+          <div class="row">
+            <button type="button" class="ui-btn" tabindex="-1">Button</button>
+            <span class="ui-input" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-ladder">
+        <header><h2 id="h-ladder">Every lightness of this hue</h2><span class="meta">Click one to use it</span></header>
+        <div class="ladder" id="ladder"></div>
+        <div class="ladder-key"><span><b>AAA</b> 7:1 or more</span><span><b>AA</b> 4.5:1 or more</span><span><b>A+</b> 3:1, large text and icons only</span></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>WCAG compares the relative luminance of the two colours, a measure of how bright each looks:</p>
+        <div class="formula">channel  c = value ÷ 255
+linear   c ≤ 0.04045 ? c ÷ 12.92 : ((c + 0.055) ÷ 1.055)^2.4
+L        = 0.2126 R + 0.7152 G + 0.0722 B
+
+ratio    = (L lighter + 0.05) ÷ (L darker + 0.05)</div>
+        <p>The ratio runs from 1:1 (no contrast) to 21:1 (black on white). It is shown cut off at two decimals, never rounded up, because WCAG treats 4.499 as a fail.</p>
+        <h3>Minimums</h3>
+        <ul>
+          <li><strong>AA, body text:</strong> 4.5:1 (success criterion 1.4.3).</li>
+          <li><strong>AA, large text:</strong> 3:1. Large means at least 18 pt (24 px), or 14 pt (about 18.66 px) in bold.</li>
+          <li><strong>AAA:</strong> 7:1 for body text and 4.5:1 for large text (1.4.6).</li>
+          <li><strong>Icons, borders and form controls:</strong> 3:1 against what is next to them (1.4.11).</li>
+        </ul>
+        <p>Logos and purely decorative text are exempt. Suggested fixes keep the hue and saturation and move only the lightness, by the smallest step that passes.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.w3.org/TR/WCAG22/#contrast-minimum" rel="noopener" target="_blank">WCAG 2.2, 1.4.3 Contrast (Minimum)</a></li>
+          <li><a href="https://www.w3.org/TR/WCAG22/#contrast-enhanced" rel="noopener" target="_blank">WCAG 2.2, 1.4.6 Contrast (Enhanced)</a></li>
+          <li><a href="https://www.w3.org/TR/WCAG22/#non-text-contrast" rel="noopener" target="_blank">WCAG 2.2, 1.4.11 Non-text Contrast</a></li>
+          <li><a href="https://www.w3.org/TR/WCAG22/#dfn-relative-luminance" rel="noopener" target="_blank">WCAG 2.2 definition: relative luminance</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, store, invalid, icon, esc } = CT;
+  const C = ContrastLogic;
+  $('#swap').innerHTML = icon('swap') + '<span>Swap</span>';
+  const saved = store.get('contrast', null);
+  if (saved) { $('#fg-hex').value = saved.fg; $('#bg-hex').value = saved.bg; }
+
+  /* Any CSS colour: our parser first, then let the browser resolve names and other syntaxes. */
+  const probe = document.createElement('span');
+  function toRGB(str) {
+    const p = C.parse(str);
+    if (p) return p;
+    probe.style.color = '';
+    probe.style.color = String(str).trim();
+    if (!probe.style.color) return null;
+    document.body.appendChild(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return C.parse(c);
+  }
+
+  function render(from) {
+    const fgIn = $('#fg-hex'), bgIn = $('#bg-hex');
+    let fg = toRGB(fgIn.value), bg = toRGB(bgIn.value);
+    invalid(fgIn, fg ? '' : 'Not a colour I recognise. Try #1d5fbf or rgb(29, 95, 191).');
+    invalid(bgIn, bg ? '' : 'Not a colour I recognise.');
+    if (!fg || !bg) { $('#lead').innerHTML = '<span class="dim">—</span>'; return; }
+    if (bg.a < 1) bg = C.over(bg, { r: 255, g: 255, b: 255 });
+    const fgFlat = fg.a < 1 ? C.over(fg, bg) : fg;
+    if (from !== 'pick') { $('#fg-pick').value = C.hex(fgFlat).toLowerCase(); $('#bg-pick').value = C.hex(bg).toLowerCase(); }
+    store.set('contrast', { fg: fgIn.value, bg: bgIn.value });
+
+    const r = C.ratio(fgFlat, bg);
+    $('#lead').innerHTML = `${C.show(r)}<small>: 1</small>`;
+    const grades = C.grade(r);
+    $('#grades').innerHTML = grades.map((g) => `<div class="grade"><span class="lvl">${g.label}</span><span class="what">${g.what}<small>WCAG ${g.sc}</small></span><span class="need">${g.min}:1</span><span class="pill ${g.pass ? 'pos' : 'neg'}">${g.pass ? 'Pass' : 'Fail'}</span></div>`).join('');
+    const aa = r >= 4.5, aaa = r >= 7, large = r >= 3;
+    const fgName = C.hex(fgFlat), bgName = C.hex(bg);
+    $('#finding').innerHTML = `${esc(fgName)} on ${esc(bgName)} has a contrast ratio of <strong>${C.show(r)}:1</strong>. ` + (aaa ? 'It passes every WCAG text level.' : aa ? 'It passes AA for all text, but not AAA for body text.' : large ? 'It passes only for large text, icons and borders. Body text needs 4.5:1.' : 'It fails every WCAG minimum.');
+
+    const sp = $('#specimen');
+    sp.style.background = bgName; sp.style.color = fgName;
+    $('#spec-meta').textContent = `${fgName} on ${bgName}`;
+
+    // ladder: the text hue at 0–100% lightness against this background
+    const { h, s, l } = C.rgbToHsl(fgFlat);
+    let nearest = 0, best = 1e9;
+    const rungs = [];
+    for (let k = 0; k <= 20; k++) {
+      const L = k * 5, c = C.hslToRgb(h, s, L), rr = C.ratio(c, bg), hx = C.hex(c);
+      if (Math.abs(L - l) < best) { best = Math.abs(L - l); nearest = k; }
+      const tag = rr >= 7 ? 'AAA' : rr >= 4.5 ? 'AA' : rr >= 3 ? 'A+' : '';
+      rungs.push({ L, hx, rr, tag, ink: C.luminance(c) > 0.2 ? '#000' : '#fff' });
+    }
+    $('#ladder').innerHTML = rungs.map((g, k) => `<button type="button" class="rung" data-hex="${g.hx}" aria-current="${k === nearest}" title="${g.hx}: ${C.show(g.rr)}:1" aria-label="${g.hx}, lightness ${g.L}%, ${C.show(g.rr)} to 1${g.tag ? ', ' + g.tag : ''}"><span class="sw" style="background:${g.hx}"><b style="color:${g.ink}">${g.tag}</b></span><span>${g.L}</span></button>`).join('');
+
+    // fixes
+    const rows = [];
+    const add = (label, f, target, which) => {
+      if (!f) { rows.push(`<div class="fixrow"><span class="sw" style="background:var(--surface)"></span><div class="t">${label}<small>No lightness of this hue reaches ${target}:1 here.</small></div><span></span></div>`); return; }
+      const swStyle = which === 'fg' ? `background:${bgName};color:${f.hex}` : `background:${f.hex};color:${fgName}`;
+      rows.push(`<div class="fixrow"><span class="sw" style="${swStyle}">Aa</span><div class="t"><b>${f.hex}</b> · ${C.show(f.ratio)}:1<small>${label}${f.deltaL ? `, lightness ${f.deltaL > 0 ? 'moved' : ''} ${f.deltaL.toFixed(1)} points` : ', already passes'}</small></div><span class="btns" style="display:flex;gap:4px"><button class="btn sm" type="button" data-use="${which}" data-hex="${f.hex}">Use</button><button class="icon-btn" type="button" data-copy="${f.hex}" aria-label="Copy ${f.hex}">${icon('copy')}</button></span></div>`);
+    };
+    add('Text colour for AA', C.fix(fgFlat, bg, 4.5), 4.5, 'fg');
+    add('Text colour for AAA', C.fix(fgFlat, bg, 7), 7, 'fg');
+    add('Background for AA', C.fix(bg, fgFlat, 4.5), 4.5, 'bg');
+    $('#fixes').innerHTML = rows.join('');
+  }
+
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#fg-hex').addEventListener('input', () => render());
+  $('#bg-hex').addEventListener('input', () => render());
+  $('#fg-pick').addEventListener('input', (e) => { $('#fg-hex').value = e.target.value.toUpperCase(); render('pick'); });
+  $('#bg-pick').addEventListener('input', (e) => { $('#bg-hex').value = e.target.value.toUpperCase(); render('pick'); });
+  $('#swap').addEventListener('click', () => { const a = $('#fg-hex').value; $('#fg-hex').value = $('#bg-hex').value; $('#bg-hex').value = a; render(); });
+  $('#ladder').addEventListener('click', (e) => { const b = e.target.closest('[data-hex]'); if (!b) return; $('#fg-hex').value = b.dataset.hex; render(); });
+  $('#fixes').addEventListener('click', (e) => {
+    const u = e.target.closest('[data-use]'); if (u) { $(u.dataset.use === 'fg' ? '#fg-hex' : '#bg-hex').value = u.dataset.hex; render(); return; }
+    const c = e.target.closest('[data-copy]'); if (c) CT.copy(c.dataset.copy);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

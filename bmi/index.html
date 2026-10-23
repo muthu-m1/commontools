@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BMI Calculator</title>
+<meta name="description" content="Adult body mass index with WHO and CDC categories, the lower NICE thresholds for some family backgrounds, a healthy weight range for your height, and waist-to-height ratio.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#d0262c">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .scale { margin-top: 22px; position: relative; padding-top: 30px; }
+  .bands { display: flex; height: 16px; gap: 2px; }
+  .bands span { height: 100%; background: var(--raised); }
+  .bands span:first-child { border-radius: 999px 0 0 999px; }
+  .bands span:last-child { border-radius: 0 999px 999px 0; }
+  .bands span.on { background: var(--data); }
+  .bands span.n1 { background: color-mix(in srgb, var(--raised) 60%, var(--chart-muted)); }
+  .ticks { position: relative; height: 20px; margin-top: 6px; font-family: var(--font-fig); font-size: 12px; color: var(--muted); }
+  .ticks span { position: absolute; transform: translateX(-50%); }
+  .band-names { position: relative; height: 34px; font-size: 12px; color: var(--muted); }
+  .band-names span { position: absolute; transform: translateX(-50%); text-align: center; line-height: 1.25; white-space: nowrap; }
+  .band-names span.on { color: var(--text); font-weight: 600; }
+  .marker { position: absolute; top: 0; transform: translateX(-50%); display: grid; justify-items: center; transition: left var(--t-ui) var(--ease-out); }
+  .marker b { font-family: var(--font-fig); font-size: 13px; font-weight: 500; background: var(--text); color: var(--surface); padding: 1px 7px; border-radius: 4px; }
+  .marker i { width: 2px; height: 26px; background: var(--text); margin-top: 1px; }
+  .ftin { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 520px) { .band-names { display: none; } }
+</style>
+</head>
+<body data-tool="bmi">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Health &amp; safety</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>BMI Calculator</h1>
+      <p class="sub" id="finding">Body mass index for adults, with the healthy weight range for your height.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-4 form" id="form" novalidate autocomplete="off">
+      <header><h2>Your measurements</h2><span class="meta">Example figures</span></header>
+      <div class="segmented" role="radiogroup" aria-label="Units">
+        <label><input type="radio" name="units" id="u-metric" value="metric" checked>Metric</label>
+        <label><input type="radio" name="units" id="u-us" value="us">US</label>
+      </div>
+      <div class="field" data-u="metric"><label for="cm">Height</label><div class="affix"><input class="input fig" id="cm" type="number" inputmode="decimal" min="0" step="any" value="175"><span>cm</span></div></div>
+      <div class="field" data-u="us" hidden><span class="label">Height</span><div class="ftin"><div class="affix"><input class="input fig" id="ft" type="number" inputmode="numeric" min="0" step="1" value="5" aria-label="Feet"><span>ft</span></div><div class="affix"><input class="input fig" id="in" type="number" inputmode="decimal" min="0" max="11.99" step="any" value="9" aria-label="Inches"><span>in</span></div></div></div>
+      <div class="field" data-u="metric"><label for="kg">Weight</label><div class="affix"><input class="input fig" id="kg" type="number" inputmode="decimal" min="0" step="any" value="72"><span>kg</span></div></div>
+      <div class="field" data-u="us" hidden><label for="lb">Weight</label><div class="affix"><input class="input fig" id="lb" type="number" inputmode="decimal" min="0" step="any" value="160"><span>lb</span></div></div>
+      <div class="field"><label for="waist">Waist (optional)</label><div class="affix"><input class="input fig" id="waist" type="number" inputmode="decimal" min="0" step="any" placeholder="Measure at the midpoint"><span id="waist-unit">cm</span></div><div class="hint">Halfway between the bottom of your ribs and the top of your hips, after breathing out.</div></div>
+      <label class="check"><input type="checkbox" id="lower"><span>Use the lower thresholds recommended for people of South Asian, Chinese, other Asian, Middle Eastern, Black African or African-Caribbean family background</span></label>
+    </form>
+
+    <div class="span-8 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Your BMI</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="scale" id="scale" aria-hidden="true">
+          <div class="marker" id="marker"><b id="marker-v"></b><i></i></div>
+          <div class="bands" id="bands"></div>
+          <div class="ticks" id="ticks"></div>
+          <div class="band-names" id="band-names"></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">Healthy range for your height</div><div class="kpi-value" id="k-range">—</div></div>
+          <div class="kpi"><div class="kpi-label">To reach that range</div><div class="kpi-value" id="k-change">—</div></div>
+          <div class="kpi"><div class="kpi-label">Waist-to-height ratio</div><div class="kpi-value" id="k-waist">—</div></div>
+        </div>
+      </section>
+      <div class="notice"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11M8 5v.01"/></svg><p>BMI is a quick screening measure, not a diagnosis. It does not tell muscle from fat, so it can mislead for athletes, older adults and during pregnancy. It is for adults: children's and teenagers' BMI is judged against growth charts for their age and sex. A doctor or nurse can give advice that fits you.</p></div>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <div class="formula">BMI = weight (kg) ÷ height (m)²
+
+US units are converted exactly: 1 lb = 0.45359237 kg, 1 in = 2.54 cm</div>
+        <h3>Categories for adults (WHO and CDC)</h3>
+        <ul>
+          <li>Under 18.5: underweight</li>
+          <li>18.5 to under 25: healthy weight</li>
+          <li>25 to under 30: overweight</li>
+          <li>30 and over: obesity, in classes from 30, 35 and 40</li>
+        </ul>
+        <h3>Lower thresholds</h3>
+        <p>People of South Asian, Chinese, other Asian, Middle Eastern, Black African or African-Caribbean family background have a higher risk of conditions such as type 2 diabetes at a lower BMI. NICE recommends treating 23 as the start of overweight and 27.5 as the start of obesity for them.</p>
+        <h3>Waist-to-height ratio</h3>
+        <p>Waist ÷ height, in the same units. NICE guidance: 0.4 to 0.49 is healthy, 0.5 to 0.59 means increased health risk, and 0.6 or more means high health risk. It reflects fat around the middle, which BMI misses. It is intended for adults with a BMI under 35.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.who.int/data/gho/data/themes/topics/topic-details/GHO/body-mass-index" rel="noopener" target="_blank">World Health Organization: body mass index</a></li>
+          <li><a href="https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html" rel="noopener" target="_blank">CDC: adult BMI categories</a></li>
+          <li><a href="https://www.nice.org.uk/guidance/ng246" rel="noopener" target="_blank">NICE guideline NG246: overweight and obesity management</a></li>
+          <li><a href="https://www.nhs.uk/conditions/overweight-and-obesity/" rel="noopener" target="_blank">NHS: overweight and obesity in adults</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, fmt, persist, invalid } = CT;
+  const B = BMILogic;
+  const form = $('#form');
+  persist(form, 'bmi');
+  const LO = 15, HI = 42;
+  const pos = (v) => ((Math.min(HI, Math.max(LO, v)) - LO) / (HI - LO)) * 100;
+
+  function read() {
+    const us = $('#u-us').checked;
+    $$('[data-u]').forEach((el) => { el.hidden = el.dataset.u !== (us ? 'us' : 'metric'); });
+    $('#waist-unit').textContent = us ? 'in' : 'cm';
+    let ok = true;
+    const chk = (id, test, msg) => { const el = $('#' + id); const v = num(el); const good = test(v); invalid(el, good ? '' : msg); if (!good) ok = false; return v; };
+    let m, kg;
+    if (us) {
+      const ft = chk('ft', (v) => Number.isInteger(v) && v >= 2 && v <= 8, '2 to 8 ft');
+      const inch = chk('in', (v) => v >= 0 && v < 12, '0 to 11.9 in');
+      const lb = chk('lb', (v) => v >= 40 && v <= 1000, '40 to 1,000 lb');
+      m = B.mFromFtIn(ft, inch); kg = B.kgFromLb(lb);
+    } else {
+      const cm = chk('cm', (v) => v >= 60 && v <= 260, '60 to 260 cm');
+      kg = chk('kg', (v) => v >= 20 && v <= 450, '20 to 450 kg');
+      m = cm / 100;
+    }
+    const wEl = $('#waist');
+    let waist = null;
+    if (wEl.value !== '') { const w = num(wEl); const good = w > 0 && w < (us ? 120 : 300); invalid(wEl, good ? '' : 'Check the waist measurement'); if (good) waist = us ? w * 2.54 : w; } else invalid(wEl, '');
+    return ok ? { us, m, kg, waist, lower: $('#lower').checked } : null;
+  }
+
+  function render() {
+    const r = read();
+    if (!r) { $('#lead').innerHTML = '<span class="dim">—</span>'; $('#lead-note').textContent = 'Check the highlighted fields.'; $('#scale').hidden = true; return; }
+    $('#scale').hidden = false;
+    const v = B.bmi(r.kg, r.m);
+    const cat = B.category(v, r.lower);
+    const bands = r.lower ? B.LOWER : B.STANDARD;
+    $('#lead').innerHTML = `${fmt.num(v, 1)}<small>kg/m²</small>`;
+    $('#lead-note').innerHTML = `<span class="pill ${cat.id === 'healthy' ? 'pos' : cat.id === 'under' || cat.id === 'over' ? 'warn' : 'neg'}">${cat.label}</span>${r.lower ? ' <span class="dim">using the lower thresholds</span>' : ''}`;
+    // scale
+    let prev = LO;
+    $('#bands').innerHTML = bands.map((b, i) => { const top = Math.min(HI, b.max); const w = pos(top) - pos(prev); prev = top; return `<span class="${b.id === cat.id ? 'on' : i % 2 ? 'n1' : ''}" style="width:${w}%"></span>`; }).join('');
+    const cuts = bands.slice(0, -1).map((b) => b.max);
+    $('#ticks').innerHTML = cuts.map((c) => `<span style="left:${pos(c)}%">${c}</span>`).join('');
+    prev = LO;
+    $('#band-names').innerHTML = bands.map((b) => { const top = Math.min(HI, b.max); const mid = (pos(prev) + pos(top)) / 2; prev = top; return `<span class="${b.id === cat.id ? 'on' : ''}" style="left:${mid}%">${b.label.replace('Obesity, class ', 'Class ').replace('Healthy weight', 'Healthy')}</span>`; }).join('');
+    $('#marker').style.left = pos(v) + '%';
+    $('#marker-v').textContent = fmt.num(v, 1);
+    // range and change
+    const range = B.healthyRange(r.m, r.lower);
+    const shown = (kg) => (r.us ? `${fmt.num(B.lbFromKg(kg), 0)} lb` : `${fmt.num(kg, 1)} kg`);
+    const lo = Math.ceil(range.min * 10) / 10, hi = Math.floor(range.max * 10 - 1e-9) / 10;
+    const loU = r.us ? Math.ceil(B.lbFromKg(range.min)) : lo, hiU = r.us ? Math.floor(B.lbFromKg(range.max) - 1e-9) : hi;
+    $('#k-range').textContent = r.us ? `${loU}–${hiU} lb` : `${fmt.num(lo, 1)}–${fmt.num(hi, 1)} kg`;
+    let change = 'In the range now';
+    if (r.kg < range.min) change = `Gain ${shown(range.min - r.kg)}`;
+    else if (r.kg >= range.max) change = `Lose ${shown(r.kg - (r.us ? B.kgFromLb(hiU) : hi))}`;
+    $('#k-change').textContent = change;
+    if (r.waist) {
+      const w = B.waistRatio(r.waist, r.m * 100);
+      $('#k-waist').innerHTML = `${fmt.num(w.ratio, 2)}<small>${w.label}${v >= 35 ? ' (less useful above BMI 35)' : ''}</small>`;
+    } else $('#k-waist').innerHTML = '<span class="dim">Add a waist size</span>';
+    const h = r.us ? `${Math.floor(r.m / 0.0254 / 12)} ft ${fmt.smart((r.m / 0.0254) % 12, 1)} in` : `${fmt.smart(r.m * 100, 1)} cm`;
+    $('#finding').innerHTML = `At ${h} and ${shown(r.kg)}, BMI is <strong>${fmt.num(v, 1)}</strong>, in the ${cat.label.toLowerCase()} range. The healthy range for this height is ${$('#k-range').textContent}.`;
+  }
+
+  form.addEventListener('input', render);
+  // the waist field is shared by both unit systems: convert its value when the units change
+  let lastUs = $('#u-us').checked;
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'units') {
+      const us = $('#u-us').checked, w = num($('#waist'));
+      if (us !== lastUs && w > 0) $('#waist').value = fmt.smart(us ? w / 2.54 : w * 2.54, 1).replace(/,/g, '');
+      lastUs = us;
+    }
+    render();
+  });
+  form.addEventListener('submit', (e) => e.preventDefault());
+  render();
+})();
+</script>
+</body>
+</html>

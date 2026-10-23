@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grade Calculator</title>
+<meta name="description" content="Work out your GPA and cumulative GPA, the score you need on a final exam, and a weighted course grade. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#e9479f">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .tabs-row { display: flex; gap: 4px; padding: 3px; border-radius: 8px; background: var(--raised); margin-bottom: var(--gap); overflow-x: auto; }
+  .tabs-row button { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; }
+  .tabs-row button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); }
+  .crow { display: grid; grid-template-columns: minmax(0, 1fr) 72px 92px 30px; gap: 8px; align-items: center; }
+  .crow.lv { grid-template-columns: minmax(0, 1fr) 72px 92px 104px 30px; }
+  .crow .input { height: 38px; }
+  .chead { display: grid; grid-template-columns: minmax(0, 1fr) 72px 92px 30px; gap: 8px; font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .chead.lv { grid-template-columns: minmax(0, 1fr) 72px 92px 104px 30px; }
+  .wrow { display: grid; grid-template-columns: minmax(0, 1fr) 92px 92px 30px; gap: 8px; align-items: center; }
+  .wrow .input { height: 38px; }
+  .targets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { height: 30px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--control); background: var(--surface); font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--surface); }
+  @media (max-width: 560px) { .crow, .chead, .crow.lv, .chead.lv { grid-template-columns: minmax(0, 1fr) 50px 70px 26px; gap: 6px; } .crow.lv .lvl, .chead.lv .lvl { display: none; } .crow .input { padding: 0 8px; } }
+</style>
+</head>
+<body data-tool="gpa">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Work &amp; study</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Grade Calculator</h1>
+      <p class="sub" id="finding">GPA, the score you need on the final, and weighted course grades.</p>
+    </div>
+  </div>
+
+  <div class="tabs-row" role="tablist" aria-label="Calculator" id="tabs">
+    <button type="button" role="tab" data-mode="gpa" aria-selected="true">GPA</button>
+    <button type="button" role="tab" data-mode="final" aria-selected="false">Final exam</button>
+    <button type="button" role="tab" data-mode="weighted" aria-selected="false">Weighted grade</button>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-6 form" id="form" novalidate autocomplete="off">
+      <div class="form" data-mode="gpa">
+        <header style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><h2 style="font-size:16px;font-weight:600">This term's courses</h2><span class="meta">Example courses</span></header>
+        <div class="chead" id="chead"><span>Course</span><span>Credits</span><span>Grade</span><span class="lvl" hidden>Level</span><span></span></div>
+        <div class="erows" id="courses"></div>
+        <div><button class="btn sm" type="button" id="add-course"></button></div>
+        <div class="form-row">
+          <div class="field"><label for="scale">Grade scale (4.0)</label><select class="input" id="scale"></select></div>
+          <div class="field" style="align-content:end"><label class="check"><input type="checkbox" id="weighted-on"><span>Weighted (honors +0.5, AP/IB +1.0)</span></label></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label for="prev-gpa">GPA so far (optional)</label><input class="input fig" id="prev-gpa" type="number" inputmode="decimal" min="0" max="5" step="any" placeholder="e.g. 3.25"></div>
+          <div class="field"><label for="prev-cr">Credits so far</label><input class="input fig" id="prev-cr" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 45"></div>
+        </div>
+      </div>
+
+      <div class="form" data-mode="final" hidden>
+        <div class="field"><label for="cur">Your grade now</label><div class="affix"><input class="input fig" id="cur" type="number" inputmode="decimal" min="0" max="150" step="any" value="85"><span>%</span></div></div>
+        <div class="field"><label for="fw">The final is worth</label><div class="affix"><input class="input fig" id="fw" type="number" inputmode="decimal" min="1" max="100" step="any" value="25"><span>% of the grade</span></div></div>
+        <div class="field">
+          <label for="target">Grade you want</label>
+          <div class="targets" id="targets"><button type="button" class="chip" data-t="93">A (93)</button><button type="button" class="chip" data-t="90">A− (90)</button><button type="button" class="chip" data-t="83">B (83)</button><button type="button" class="chip" data-t="73">C (73)</button></div>
+          <div class="affix"><input class="input fig" id="target" type="number" inputmode="decimal" min="0" max="150" step="any" value="90"><span>%</span></div>
+          <div class="hint">Letter cut-offs shown are the common US ones; check your syllabus.</div>
+        </div>
+      </div>
+
+      <div class="form" data-mode="weighted" hidden>
+        <div class="wrow" style="font-size:12.5px;color:var(--muted);font-weight:500"><span>Category</span><span>Weight %</span><span>Score %</span><span></span></div>
+        <div class="erows" id="cats"></div>
+        <div><button class="btn sm" type="button" id="add-cat"></button></div>
+        <div class="hint">Leave out categories with no marks yet; the grade so far is worked out from the rest.</div>
+      </div>
+    </form>
+
+    <div class="span-6 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Result</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="kpis" id="kpis"></div>
+      </section>
+      <section class="panel" aria-labelledby="h-viz">
+        <header><h2 id="h-viz">Breakdown</h2><span class="meta" id="viz-meta"></span></header>
+        <div class="chart" id="viz"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <div class="formula">GPA          = Σ (grade points × credits) ÷ Σ credits
+Cumulative   = (old GPA × old credits + term points) ÷ all credits
+Final needed = (target − now × (1 − w)) ÷ w,  w = final's weight
+Weighted     = Σ (weight × score) ÷ Σ weights</div>
+        <p>Grade points use the common US 4.0 scale: A 4.0, A− 3.7, B+ 3.3, B 3.0, B− 2.7, C+ 2.3, C 2.0, C− 1.7, D+ 1.3, D 1.0, D− 0.7, F 0. Some schools give an A+ 4.3, use whole letters only, or weight honors and AP classes; choose the option that matches your school. Pass/fail courses carry no grade points and are left out.</p>
+        <p>"Your grade now" means your average on everything except the final. If the weights you enter for categories do not add up to 100, the grade is calculated from the categories you entered, scaled to 100%.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Note</h2>
+        <p class="sources" style="color:var(--muted)">Every school publishes its own grading policy, usually in the student handbook or course syllabus. When this calculator and your school's policy differ, your school's policy wins.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="../assets/charts.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, fmt, store, invalid, icon, esc } = CT;
+  const G = GPALogic;
+  $('#add-course').innerHTML = icon('plus') + '<span>Add course</span>';
+  $('#add-cat').innerHTML = icon('plus') + '<span>Add category</span>';
+  $('#scale').innerHTML = Object.entries(G.SCALES).map(([k, s]) => `<option value="${k}">${s.label}</option>`).join('');
+  const S = store.get('gpa:state', null) || {
+    mode: 'gpa',
+    courses: [{ name: 'Biology', credits: 4, grade: 'A-', level: 'none' }, { name: 'Calculus', credits: 4, grade: 'B+', level: 'none' }, { name: 'English literature', credits: 3, grade: 'A', level: 'none' }, { name: 'History', credits: 3, grade: 'B', level: 'none' }],
+    cats: [{ name: 'Homework', weight: 20, score: 95 }, { name: 'Quizzes', weight: 30, score: 82 }, { name: 'Midterm', weight: 20, score: 78 }, { name: 'Final', weight: 30, score: '' }],
+  };
+  const save = () => store.set('gpa:state', S);
+  const LEVELS = [['none', 'Regular'], ['honors', 'Honors'], ['ap', 'AP / IB']];
+
+  function courseRows() {
+    const pts = G.SCALES[$('#scale').value].points;
+    const lv = $('#weighted-on').checked;
+    $('#chead').classList.toggle('lv', lv);
+    $('#chead .lvl').hidden = !lv;
+    $('#courses').innerHTML = S.courses.map((c, i) => `<div class="crow ${lv ? 'lv' : ''}" data-i="${i}">
+      <input class="input" data-k="name" value="${esc(c.name)}" placeholder="Course" aria-label="Course name">
+      <input class="input fig" data-k="credits" type="number" inputmode="decimal" min="0" step="any" value="${c.credits}" aria-label="Credits">
+      <select class="input" data-k="grade" aria-label="Grade">${Object.keys(pts).concat(['P', 'NP', 'W']).map((g) => `<option value="${g}" ${g === c.grade ? 'selected' : ''}>${g.replace('-', '−')}</option>`).join('')}</select>
+      ${lv ? `<select class="input lvl" data-k="level" aria-label="Level">${LEVELS.map(([k, l]) => `<option value="${k}" ${k === c.level ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
+      <button class="icon-btn" type="button" data-rm-course="${i}" aria-label="Remove ${esc(c.name || 'course')}">${icon('x')}</button></div>`).join('');
+  }
+  function catRows() {
+    $('#cats').innerHTML = S.cats.map((c, i) => `<div class="wrow" data-c="${i}">
+      <input class="input" data-k="name" value="${esc(c.name)}" placeholder="Category" aria-label="Category name">
+      <input class="input fig" data-k="weight" type="number" inputmode="decimal" min="0" max="100" step="any" value="${c.weight}" aria-label="Weight percent">
+      <input class="input fig" data-k="score" type="number" inputmode="decimal" min="0" max="150" step="any" value="${c.score}" aria-label="Score percent" placeholder="—">
+      <button class="icon-btn" type="button" data-rm-cat="${i}" aria-label="Remove ${esc(c.name || 'category')}">${icon('x')}</button></div>`).join('');
+  }
+
+  function setMode(m) {
+    S.mode = m; save();
+    $$('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
+    $$('#form > [data-mode]').forEach((f) => { f.hidden = f.dataset.mode !== m; });
+    render();
+  }
+  const kpi = (l, v, s) => `<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}${s ? `<small>${s}</small>` : ''}</div></div>`;
+
+  function render() {
+    if (S.mode === 'gpa') renderGpa();
+    else if (S.mode === 'final') renderFinal();
+    else renderWeighted();
+  }
+
+  function renderGpa() {
+    const r = G.gpa(S.courses.map((c) => ({ credits: Number(c.credits), grade: c.grade, level: c.level })), { scale: $('#scale').value, weighted: $('#weighted-on').checked });
+    $('#lead-label').textContent = 'Term GPA';
+    $('#lead').innerHTML = r.gpa == null ? '<span class="dim">—</span>' : fmt.num(r.gpa, 2);
+    const pg = num($('#prev-gpa')), pc = num($('#prev-cr'));
+    const hasPrev = Number.isFinite(pg) && Number.isFinite(pc) && pc > 0;
+    invalid($('#prev-gpa'), $('#prev-gpa').value === '' || (pg >= 0 && pg <= 5) ? '' : '0 to 5');
+    const cum = hasPrev && r.gpa != null ? G.cumulative(pg, pc, r) : null;
+    $('#lead-note').innerHTML = r.gpa == null ? 'Add a course with credits and a letter grade.' : `${fmt.smart(r.credits, 2)} graded credits${r.skipped ? `, ${r.skipped} pass/fail or withdrawn left out` : ''}.`;
+    $('#kpis').innerHTML = kpi('Quality points', fmt.smart(r.qualityPoints, 2)) + kpi('Credits', fmt.smart(r.credits, 2)) + kpi('Cumulative GPA', cum == null ? '<span class="dim">—</span>' : fmt.num(cum, 2), cum == null ? 'add your GPA so far' : `over ${fmt.smart(pc + r.credits, 2)} credits`);
+    $('#finding').innerHTML = r.gpa == null ? 'Add your courses to see your GPA.' : `This term's GPA is <strong>${fmt.num(r.gpa, 2)}</strong> over ${fmt.smart(r.credits, 2)} credits${cum != null ? `, bringing the cumulative GPA to <strong>${fmt.num(cum, 2)}</strong>` : ''}.`;
+    // credits by grade
+    const by = {};
+    S.courses.forEach((c) => { const cr = Number(c.credits); if (cr > 0) by[c.grade] = (by[c.grade] || 0) + cr; });
+    const order = Object.keys(G.SCALES[$('#scale').value].points).concat(['P', 'NP', 'W']);
+    const rows = order.filter((g) => by[g]).map((g) => ({ label: g.replace('-', '−'), value: by[g] }));
+    $('#h-viz').textContent = 'Credits by grade';
+    $('#viz-meta').textContent = '';
+    if (rows.length) Charts.barList($('#viz'), rows, { format: (v) => `${fmt.smart(v, 2)} cr` }); else $('#viz').innerHTML = '<div class="empty">Your courses appear here.</div>';
+  }
+
+  function renderFinal() {
+    const cur = num($('#cur')), w = num($('#fw')), t = num($('#target'));
+    const ok = invalid($('#cur'), cur >= 0 && cur <= 150 ? '' : '0 to 150') & invalid($('#fw'), w > 0 && w <= 100 ? '' : '1 to 100') & invalid($('#target'), t >= 0 && t <= 150 ? '' : '0 to 150');
+    $$('#targets .chip').forEach((c) => c.setAttribute('aria-pressed', String(Number(c.dataset.t) === t)));
+    if (!ok) { $('#lead').innerHTML = '<span class="dim">—</span>'; return; }
+    const need = G.finalNeeded(cur, w, t);
+    $('#lead-label').textContent = `Score needed on the final for ${fmt.smart(t, 2)}%`;
+    $('#lead').innerHTML = `${fmt.num(need, 1)}<small>%</small>`;
+    $('#lead-note').innerHTML = need > 100 ? `<span class="pill neg">Above 100%</span> Not reachable without extra credit. The best possible grade is ${fmt.num(G.withFinal(cur, w, 100), 1)}%.` : need <= 0 ? `<span class="pill pos">Already there</span> Even a zero on the final leaves you at ${fmt.num(G.withFinal(cur, w, 0), 1)}%.` : `Then your course grade would be exactly ${fmt.smart(t, 2)}% (${G.letter(t).replace('-', '−')}).`;
+    const at = (f) => G.withFinal(cur, w, f);
+    $('#kpis').innerHTML = kpi('With 100% on the final', `${fmt.num(at(100), 1)}%`, G.letter(at(100)).replace('-', '−')) + kpi('With 70%', `${fmt.num(at(70), 1)}%`, G.letter(at(70)).replace('-', '−')) + kpi('With 0%', `${fmt.num(at(0), 1)}%`, G.letter(at(0)).replace('-', '−'));
+    $('#finding').innerHTML = `With ${fmt.smart(cur, 2)}% now and a final worth ${fmt.smart(w, 2)}%, you need <strong>${fmt.num(need, 1)}%</strong> on the final for a ${fmt.smart(t, 2)}% course grade.`;
+    const xs = Array.from({ length: 21 }, (_, i) => i * 5);
+    $('#h-viz').textContent = 'Course grade for every final score';
+    $('#viz-meta').textContent = 'Final exam score along the bottom';
+    Charts.line($('#viz'), { labels: xs.map((x) => `${x}%`), series: [{ name: 'Course grade', values: xs.map(at) }], format: (v) => `${fmt.num(v, 1)}%`, height: 220, reference: { value: t, label: `Target ${fmt.smart(t, 2)}%` }, xAt: [0, 4, 8, 12, 16, 20] });
+  }
+
+  function renderWeighted() {
+    const items = S.cats.map((c) => ({ weight: Number(c.weight), score: c.score === '' ? NaN : Number(c.score) }));
+    const r = G.weighted(items);
+    $('#lead-label').textContent = 'Weighted grade';
+    $('#lead').innerHTML = r.grade == null ? '<span class="dim">—</span>' : `${fmt.num(r.grade, 1)}<small>%</small>`;
+    const counted = items.filter((i) => i.weight > 0 && Number.isFinite(i.score));
+    $('#lead-note').innerHTML = r.grade == null ? 'Enter a weight and score for at least one category.' : `${G.letter(r.grade).replace('-', '−')} on the common US scale, from ${fmt.smart(r.totalWeight, 2)}% of the course${Math.abs(r.totalWeight - 100) > 1e-9 ? ' (scaled to 100%)' : ''}.`;
+    const allW = items.reduce((a, i) => a + (i.weight > 0 ? i.weight : 0), 0);
+    $('#kpis').innerHTML = kpi('Weight graded so far', `${fmt.smart(r.totalWeight, 2)}%`) + kpi('Weights entered', `${fmt.smart(allW, 2)}%`, Math.abs(allW - 100) > 1e-9 ? 'should total 100%' : 'adds up') + kpi('Categories counted', `${counted.length} of ${items.length}`);
+    $('#finding').innerHTML = r.grade == null ? 'Enter your categories to see the weighted grade.' : `Your weighted grade so far is <strong>${fmt.num(r.grade, 1)}%</strong>, based on ${fmt.smart(r.totalWeight, 2)}% of the course.`;
+    $('#h-viz').textContent = 'Points each category contributes';
+    $('#viz-meta').textContent = 'Weight × score';
+    const rows = S.cats.map((c, i) => ({ label: c.name || `Category ${i + 1}`, value: Number.isFinite(items[i].score) && items[i].weight > 0 ? (items[i].weight * items[i].score) / 100 : 0 })).filter((x) => x.value > 0);
+    if (rows.length) Charts.barList($('#viz'), rows, { format: (v) => `${fmt.num(v, 1)} pts` }); else $('#viz').innerHTML = '<div class="empty">Categories with scores appear here.</div>';
+  }
+
+  // events
+  $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) setMode(b.dataset.mode); });
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#form').addEventListener('input', (e) => {
+    const row = e.target.closest('[data-i]'), cat = e.target.closest('[data-c]');
+    if (row) S.courses[Number(row.dataset.i)][e.target.dataset.k] = e.target.value;
+    if (cat) S.cats[Number(cat.dataset.c)][e.target.dataset.k] = e.target.value;
+    save(); render();
+  });
+  $('#form').addEventListener('change', (e) => {
+    if (e.target.id === 'scale' || e.target.id === 'weighted-on') courseRows();
+    const row = e.target.closest('[data-i]'); if (row) S.courses[Number(row.dataset.i)][e.target.dataset.k] = e.target.value;
+    save(); render();
+  });
+  $('#form').addEventListener('click', (e) => {
+    const rc = e.target.closest('[data-rm-course]'); if (rc) { S.courses.splice(Number(rc.dataset.rmCourse), 1); courseRows(); save(); render(); return; }
+    const rt = e.target.closest('[data-rm-cat]'); if (rt) { S.cats.splice(Number(rt.dataset.rmCat), 1); catRows(); save(); render(); return; }
+    const t = e.target.closest('[data-t]'); if (t) { $('#target').value = t.dataset.t; render(); }
+  });
+  $('#add-course').addEventListener('click', () => { S.courses.push({ name: '', credits: 3, grade: 'A', level: 'none' }); courseRows(); save(); render(); });
+  $('#add-cat').addEventListener('click', () => { S.cats.push({ name: '', weight: '', score: '' }); catRows(); save(); render(); });
+  courseRows(); catRows();
+  setMode(S.mode || 'gpa');
+})();
+</script>
+</body>
+</html>

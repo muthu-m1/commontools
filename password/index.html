@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Password Generator</title>
+<meta name="description" content="Generate random passwords and passphrases in your browser with the operating system's secure random generator, and see their exact strength. Nothing is sent or stored.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .out { font-family: var(--font-code); font-size: clamp(22px, 3.2vw, 32px); line-height: 1.35; letter-spacing: 0.02em; overflow-wrap: anywhere; word-break: break-all; padding: 18px 20px; border-radius: var(--radius-control); background: var(--raised); min-height: 92px; display: flex; align-items: center; user-select: all; }
+  .out.phrase { word-break: normal; overflow-wrap: anywhere; letter-spacing: 0; }
+  .out .d { color: var(--data); }
+  .out .s { color: var(--muted); font-weight: 500; }
+  .out-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .meter { margin-top: 20px; }
+  .meter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .meter-head b { font-family: var(--font-fig); font-weight: 500; font-size: 20px; }
+  .track { position: relative; height: 10px; border-radius: 999px; background: var(--raised); overflow: visible; }
+  .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--data); transition: width var(--t-ui) var(--ease-out); }
+  .ticks { position: relative; height: 22px; margin-top: 4px; font-size: 12px; color: var(--muted); font-family: var(--font-fig); }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .ticks span::before { content: ""; position: absolute; left: 50%; top: -12px; width: 1px; height: 8px; background: var(--control); }
+  .ticks span:first-child { transform: none; }
+  .ticks span:first-child::before { left: 0; }
+  .ticks span:last-child { transform: translateX(-100%); }
+  .ticks span:last-child::before { left: auto; right: 0; }
+  .crack td:first-child { white-space: normal; }
+  .crack td .sub { max-width: 46ch; white-space: normal; }
+  .alts { display: grid; gap: 6px; }
+  .alt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 8px 8px 12px; border-radius: var(--radius-control); background: var(--raised); font-family: var(--font-code); font-size: 14.5px; }
+  .alt span { overflow-wrap: anywhere; word-break: break-all; }
+  .alt.phrase span { word-break: normal; }
+  .tips { display: grid; gap: 10px; }
+  .tips li { padding-left: 2px; }
+</style>
+</head>
+<body data-tool="password">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Privacy &amp; security</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Password Generator</h1>
+      <p class="sub" id="finding">Random passwords and passphrases, made on this device and never sent anywhere.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-5 form" id="form" novalidate autocomplete="off">
+      <header><h2>Settings</h2></header>
+      <div class="segmented" role="radiogroup" aria-label="Kind">
+        <label><input type="radio" name="kind" id="k-pw" value="password" checked>Password</label>
+        <label><input type="radio" name="kind" id="k-pp" value="passphrase">Passphrase</label>
+      </div>
+
+      <div class="form" data-show="password">
+        <div class="field">
+          <label for="length">Length <span class="dim" id="length-v"></span></label>
+          <input type="range" id="length" min="8" max="64" step="1" value="20">
+        </div>
+        <label class="check"><input type="checkbox" id="lower" checked><span>Lowercase a–z</span></label>
+        <label class="check"><input type="checkbox" id="upper" checked><span>Uppercase A–Z</span></label>
+        <label class="check"><input type="checkbox" id="digits" checked><span>Digits 0–9</span></label>
+        <label class="check"><input type="checkbox" id="symbols" checked><span>Symbols such as ! # % &amp; @</span></label>
+        <label class="check"><input type="checkbox" id="lookalike"><span>Leave out look-alikes (I l 1 O 0 o | and quotes)</span></label>
+        <label class="check"><input type="checkbox" id="require" checked><span>Use every chosen type at least once</span></label>
+      </div>
+
+      <div class="form" data-show="passphrase" hidden>
+        <div class="field">
+          <label for="words">Words <span class="dim" id="words-v"></span></label>
+          <input type="range" id="words" min="3" max="12" step="1" value="7">
+        </div>
+        <div class="field">
+          <label for="sep">Between words</label>
+          <select class="input" id="sep"><option value="-">Hyphen  -</option><option value=" ">Space</option><option value=".">Period  .</option><option value="_">Underscore  _</option><option value="">Nothing</option></select>
+        </div>
+        <label class="check"><input type="checkbox" id="caps"><span>Capitalize each word</span></label>
+        <label class="check"><input type="checkbox" id="number"><span>Add a digit to one word</span></label>
+        <p class="hint" id="list-size"></p>
+      </div>
+      <div class="err" id="opt-err" hidden></div>
+    </form>
+
+    <div class="span-7 stack">
+      <section class="panel" aria-labelledby="h-out">
+        <h2 id="h-out" class="sr-only">Your new password</h2>
+        <div class="out" id="out" aria-live="polite"></div>
+        <div class="out-actions">
+          <button class="btn primary lg" type="button" id="copy"></button>
+          <button class="btn secondary lg" type="button" id="again"></button>
+        </div>
+        <div class="meter">
+          <div class="meter-head"><span id="tier">—</span><b id="bits">—</b></div>
+          <div class="track" role="meter" aria-valuemin="0" aria-valuemax="128" id="track" aria-label="Strength in bits"><div class="fill" id="fill" style="width:0"></div></div>
+          <div class="ticks"><span style="left:0">0</span><span style="left:31.25%">40</span><span style="left:46.875%">60</span><span style="left:62.5%">80</span><span style="left:100%">128+ bits</span></div>
+        </div>
+      </section>
+
+      <section class="panel flush" aria-labelledby="h-crack">
+        <header style="padding:var(--pad) var(--pad) 0;margin-bottom:8px"><h2 id="h-crack">Average time to guess it</h2><span class="meta">If the attacker knows exactly how it was made</span></header>
+        <div class="table-wrap">
+          <table class="crack"><thead><tr><th>Attack</th><th class="n">Time</th></tr></thead><tbody id="crack"></tbody></table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-alts">
+        <header><h2 id="h-alts">More like this</h2><button class="btn sm ghost" type="button" id="more"></button></header>
+        <div class="alts" id="alts"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this works</h2>
+        <p>Every character or word is picked with <span class="mono">crypto.getRandomValues</span>, the browser's interface to your operating system's secure random generator. Picks are made with rejection sampling, so each character in the set is exactly equally likely. Nothing is stored or sent: close the tab and the password exists only where you pasted it.</p>
+        <h3>Strength, exactly</h3>
+        <p>Strength is measured in bits of entropy: log₂ of the number of equally likely results. It assumes the attacker knows the settings you chose and has to guess the random part.</p>
+        <div class="formula">Password:    log₂(N^L), N = characters to choose from, L = length
+             with "every type at least once", the count of valid
+             passwords by inclusion–exclusion
+Passphrase:  words × log₂(list size)
+             + log₂(10 × words) when a digit is added</div>
+        <p>Each extra bit doubles the guessing work. The guessing speeds in the table are illustrative: an online login that limits attempts, an offline attack on a slow password hash such as bcrypt, and a well-funded offline attack on a fast hash.</p>
+        <h3>Good habits</h3>
+        <ul class="tips">
+          <li>Use a different password for every account. A password manager makes this practical.</li>
+          <li>Turn on two-step verification wherever it is offered.</li>
+          <li>Length beats complexity. A long passphrase is easier to type and remember than a short jumble.</li>
+        </ul>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://pages.nist.gov/800-63-4/sp800-63b.html" rel="noopener" target="_blank">NIST SP 800-63B: Authentication and lifecycle management</a></li>
+          <li><a href="https://www.cisa.gov/secure-our-world/use-strong-passwords" rel="noopener" target="_blank">CISA: Use strong passwords</a></li>
+          <li><a href="https://www.eff.org/dice" rel="noopener" target="_blank">EFF: Dice-generated passphrases</a></li>
+          <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues" rel="noopener" target="_blank">MDN: Crypto.getRandomValues()</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="words.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, store, icon, esc } = CT;
+  const PL = PasswordLogic;
+  $('#copy').innerHTML = icon('copy') + '<span>Copy</span>';
+  $('#again').innerHTML = icon('refresh') + '<span>New one</span>';
+  $('#more').innerHTML = icon('refresh') + '<span>Shuffle</span>';
+  $('#list-size').textContent = `Words come from a list of ${WORDS.length.toLocaleString()} common English words, so each adds ${Math.log2(WORDS.length).toFixed(2)} bits.`;
+
+  // settings only are remembered; passwords never are
+  const saved = store.get('password:settings', null);
+  if (saved) Object.entries(saved).forEach(([id, v]) => { const el = document.getElementById(id); if (!el) return; if (el.type === 'checkbox' || el.type === 'radio') el.checked = v; else el.value = v; });
+
+  function opts() {
+    return {
+      kind: $('input[name="kind"]:checked').value,
+      length: Number($('#length').value),
+      lower: $('#lower').checked, upper: $('#upper').checked, digits: $('#digits').checked, symbols: $('#symbols').checked,
+      avoidLookalikes: $('#lookalike').checked, requireEach: $('#require').checked,
+      words: Number($('#words').value), separator: $('#sep').value, capitalize: $('#caps').checked, number: $('#number').checked,
+    };
+  }
+  function saveSettings() {
+    const s = {};
+    $$('#form input, #form select').forEach((el) => { if (!el.id) return; s[el.id] = el.type === 'checkbox' || el.type === 'radio' ? el.checked : el.value; });
+    store.set('password:settings', s);
+  }
+
+  function make(o) { return o.kind === 'password' ? PL.password(o) : PL.passphrase(o, WORDS); }
+  function bitsFor(o) { return o.kind === 'password' ? PL.log2Big(PL.passwordSpace(o)) : PL.passphraseBits(o, WORDS.length); }
+
+  function paint(el, text, kind) {
+    el.classList.toggle('phrase', kind !== 'password');
+    if (kind !== 'password') { el.textContent = text; return; }
+    el.innerHTML = [...text].map((ch) => /[0-9]/.test(ch) ? `<span class="d">${esc(ch)}</span>` : /[a-zA-Z]/.test(ch) ? esc(ch) : `<span class="s">${esc(ch)}</span>`).join('');
+  }
+
+  const ATTACKS = [
+    { name: 'Online, with attempt limits', sub: 'A website that blocks rapid tries: about 10 guesses a second at most.', rate: 10 },
+    { name: 'Offline, slow hash', sub: 'A stolen database protected with bcrypt or similar: about 100,000 guesses a second on a strong graphics card.', rate: 1e5 },
+    { name: 'Offline, fast hash, large cluster', sub: 'A stolen database with a fast, unsalted hash and many GPUs: about a trillion guesses a second.', rate: 1e12 },
+  ];
+
+  const sup = (t) => esc(t).replace(/\^(\d+)/g, '<sup>$1</sup>');
+  let current = '';
+  function generate() {
+    const o = opts();
+    $('#length-v').textContent = o.length + ' characters';
+    $('#words-v').textContent = o.words + ' words';
+    $$('[data-show]').forEach((el) => { el.hidden = el.dataset.show !== o.kind; });
+    const err = $('#opt-err'); err.hidden = true;
+    try {
+      current = make(o);
+    } catch (e) {
+      err.hidden = false; err.textContent = e.message;
+      $('#out').textContent = ''; return;
+    }
+    paint($('#out'), current, o.kind);
+    const bits = bitsFor(o), t = PL.tier(bits);
+    $('#bits').textContent = bits.toFixed(1) + ' bits';
+    $('#tier').innerHTML = `<span class="pill ${t.id === 'weak' ? 'neg' : t.id === 'fair' ? 'warn' : 'pos'}">${t.label}</span>`;
+    $('#fill').style.width = Math.min(100, (bits / 128) * 100) + '%';
+    $('#track').setAttribute('aria-valuenow', bits.toFixed(1));
+    $('#crack').innerHTML = ATTACKS.map((a) => `<tr><td>${a.name}<span class="sub">${a.sub}</span></td><td class="n">${sup(PL.describeSeconds(PL.crackSeconds(bits, a.rate)))}</td></tr>`).join('');
+    const fast = sup(PL.describeSeconds(PL.crackSeconds(bits, 1e12)));
+    $('#finding').innerHTML = `This ${o.kind === 'password' ? o.length + '-character password' : o.words + '-word passphrase'} has <strong>${bits.toFixed(1)} bits</strong> of entropy. At a trillion guesses a second it would take on average <strong>${fast}</strong> to find.`;
+    alts();
+    saveSettings();
+  }
+
+  function alts() {
+    const o = opts();
+    let html = '';
+    try { for (let i = 0; i < 5; i++) { const p = make(o); html += `<div class="alt ${o.kind !== 'password' ? 'phrase' : ''}"><span>${esc(p)}</span><button class="icon-btn" type="button" data-copy="${esc(p)}" aria-label="Copy">${icon('copy')}</button></div>`; } } catch (e) { html = ''; }
+    $('#alts').innerHTML = html;
+  }
+
+  $('#form').addEventListener('input', generate);
+  $('#form').addEventListener('change', generate);
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#again').addEventListener('click', generate);
+  $('#more').addEventListener('click', alts);
+  $('#copy').addEventListener('click', () => { if (current) CT.copy(current); });
+  $('#alts').addEventListener('click', (e) => { const b = e.target.closest('[data-copy]'); if (b) CT.copy(b.dataset.copy); });
+  generate();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unit Converter</title>
+<meta name="description" content="Convert length, weight, volume, temperature, area, speed, data, pressure, energy, time and fuel economy with exact definitions. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#f7dd47">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .cats { display: flex; gap: 4px; overflow-x: auto; padding: 3px; background: var(--raised); border-radius: 8px; margin-bottom: var(--gap); scrollbar-width: thin; }
+  .cats button { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+  .cats button:hover { color: var(--text); }
+  .cats button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); }
+  .conv { display: grid; gap: 14px; }
+  .side { display: grid; gap: 8px; }
+  .side .big-in { width: 100%; height: 64px; border: 1px solid var(--control); border-radius: 8px; padding: 0 16px; font-family: var(--font-fig); font-size: 30px; letter-spacing: -0.02em; background: var(--surface); color: var(--text); }
+  .side .big-in:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .side .big-out { min-height: 64px; display: flex; align-items: center; padding: 0 16px; border-radius: 8px; background: var(--data-soft); font-family: var(--font-fig); font-size: 30px; letter-spacing: -0.02em; overflow-wrap: anywhere; color: var(--text); }
+  .swap-row { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  .swap-row::before, .swap-row::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .exact { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--radius-control); background: var(--raised); font-size: 14px; }
+  .exact b { font-family: var(--font-fig); font-weight: 500; }
+  table.all td:first-child { cursor: pointer; }
+  table.all tr.is-to td { background: var(--data-soft); }
+  table.all tr.is-from td { color: var(--muted); }
+  table.all td.n { font-size: 15px; }
+  table.all tbody tr { cursor: pointer; }
+  table.all tbody tr:hover td { background: var(--raised); }
+  table.all tbody tr.is-to:hover td { background: var(--data-soft); }
+  .copy-out { justify-self: start; }
+</style>
+</head>
+<body data-tool="units">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Everyday</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Unit Converter</h1>
+      <p class="sub" id="finding">Exact conversions between metric, US customary and imperial units.</p>
+    </div>
+  </div>
+
+  <div class="cats" role="tablist" aria-label="What to convert" id="cats"></div>
+
+  <div class="grid">
+    <section class="panel span-5" aria-labelledby="h-conv">
+      <h2 id="h-conv" class="sr-only">Convert</h2>
+      <form class="conv" id="form" novalidate autocomplete="off">
+        <div class="side">
+          <label class="label" for="value">From</label>
+          <input class="big-in" id="value" type="text" inputmode="decimal" value="1" spellcheck="false">
+          <label class="sr-only" for="from">From unit</label>
+          <select class="input" id="from"></select>
+          <div class="err" id="value-err" hidden></div>
+        </div>
+        <div class="swap-row"><button class="btn sm" type="button" id="swap"></button></div>
+        <div class="side">
+          <label class="label" for="to">To</label>
+          <output class="big-out" id="out" for="value from to" aria-live="polite">—</output>
+          <select class="input" id="to"></select>
+        </div>
+        <button class="btn sm copy-out" type="button" id="copy"></button>
+        <div class="exact" id="exact"></div>
+      </form>
+    </section>
+
+    <section class="panel flush span-7" aria-labelledby="h-all">
+      <header style="padding:var(--pad) var(--pad) 0;margin-bottom:8px"><h2 id="h-all">In every unit</h2><span class="meta">Click a row to convert to it</span></header>
+      <div class="table-wrap">
+        <table class="all"><thead><tr><th>Unit</th><th class="n">Value</th></tr></thead><tbody id="all"></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>Each value is converted to one base unit per category (metre, kilogram, litre, square metre and so on) and then to the target unit. The factors are the legal definitions, so results are exact to the limits of the computer's arithmetic, about 15 significant digits. Results are shown to 10 significant digits.</p>
+        <ul>
+          <li>Inch, foot, yard, mile and pound: the 1959 international agreement (1 in = 2.54 cm, 1 lb = 0.45359237 kg).</li>
+          <li>US gallon = 231 cubic inches = 3.785411784 L; cups, pints and quarts follow from it. Imperial gallon = 4.54609 L.</li>
+          <li>Kilobyte, megabyte and so on use powers of 1,000; kibibyte, mebibyte and so on use powers of 1,024 (IEC prefixes).</li>
+          <li>Calorie is the thermochemical calorie, 4.184 J. A food Calorie is a kilocalorie.</li>
+          <li>Millimetres and inches of mercury are conventional values (marked "conventional" when you use them).</li>
+          <li>Fuel economy is an inverse relation: litres per 100 km = 100 ÷ kilometres per litre.</li>
+        </ul>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.nist.gov/pml/special-publication-811" rel="noopener" target="_blank">NIST Special Publication 811: Guide for the Use of the SI</a></li>
+          <li><a href="https://www.nist.gov/pml/owm/metric-si/unit-conversion" rel="noopener" target="_blank">NIST Office of Weights and Measures: unit conversion</a></li>
+          <li><a href="https://www.legislation.gov.uk/uksi/1995/1804/schedule/made" rel="noopener" target="_blank">UK Units of Measurement Regulations 1995 (imperial units)</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, store, icon, esc } = CT;
+  const U = UnitsLogic;
+  const DEFAULT_PAIR = { length: ['mi', 'km'], mass: ['lb', 'kg'], volume: ['cup', 'ml'], temperature: ['f', 'c'], area: ['ac', 'm2'], speed: ['mph', 'kmh'], data: ['GB', 'GiB'], pressure: ['psi', 'kpa'], energy: ['kcal', 'kj'], time: ['wk', 'h'], fuel: ['mpg', 'l100'] };
+  const DEFAULT_VALUE = { temperature: '98.6', fuel: '30', data: '500', pressure: '32' };
+  $('#swap').innerHTML = icon('swap') + '<span>Swap</span>';
+  $('#copy').innerHTML = icon('copy') + '<span>Copy result</span>';
+
+  let S = store.get('units', null) || { cat: 'length', from: 'mi', to: 'km', value: '1' };
+  const hash = location.hash.replace('#', '');
+  if (U.cat(hash) && hash !== S.cat) S = { cat: hash, from: DEFAULT_PAIR[hash][0], to: DEFAULT_PAIR[hash][1], value: DEFAULT_VALUE[hash] || '1' };
+
+  $('#cats').innerHTML = U.CATEGORIES.map((c) => `<button type="button" role="tab" id="tab-${c.id}" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
+
+  function setCategory(id, keep) {
+    const c = U.cat(id);
+    S.cat = id;
+    if (!keep) { S.from = DEFAULT_PAIR[id][0]; S.to = DEFAULT_PAIR[id][1]; S.value = DEFAULT_VALUE[id] || '1'; }
+    $$('#cats button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.cat === id)));
+    const opts = c.units.map((u) => `<option value="${u.id}">${esc(u.name)}</option>`).join('');
+    $('#from').innerHTML = opts; $('#to').innerHTML = opts;
+    $('#from').value = S.from; $('#to').value = S.to; $('#value').value = S.value;
+    render();
+  }
+
+  const parseNum = (s) => { const t = String(s).replace(/[,\s_]/g, '').replace(/[−–]/g, '-'); return t === '' || !/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(t) ? NaN : Number(t); };
+
+  function render() {
+    S.from = $('#from').value; S.to = $('#to').value; S.value = $('#value').value;
+    store.set('units', S);
+    const c = U.cat(S.cat), a = U.unit(c, S.from), b = U.unit(c, S.to);
+    const v = parseNum(S.value);
+    const msg = U.check(S.cat, S.from, v);
+    const err = $('#value-err');
+    err.hidden = !msg; err.textContent = msg;
+    $('#value').setAttribute('aria-invalid', msg ? 'true' : 'false');
+    if (msg) { $('#out').textContent = '—'; $('#all').innerHTML = ''; $('#exact').textContent = ''; return; }
+    const out = U.convert(S.cat, S.from, S.to, v);
+    $('#out').textContent = U.format(out);
+    $('#finding').innerHTML = `${esc(U.format(v))} ${esc(SYM[a.id])} = <strong>${esc(U.format(out))} ${esc(SYM[b.id])}</strong> <span class="dim">(${esc(a.name)} to ${esc(b.name)})</span>`;
+    // the factor, stated once
+    let exact;
+    if (a.f && b.f) {
+      const one = a.f / b.f;
+      const conventional = a.exact === false || b.exact === false;
+      const terminates = Number(one.toPrecision(15)) === one;
+      exact = `<span>1 ${esc(SYM[a.id] || a.id)} =</span><b>${esc(U.format(one, 15))}</b><span>${esc(SYM[b.id] || b.id)}</span><span class="pill ${conventional ? 'warn' : terminates ? 'pos' : ''}">${conventional ? 'Conventional value' : terminates ? 'Exact' : 'Exact ratio, shown to 15 digits'}</span>`;
+    } else {
+      exact = `<span>${[a, b].filter((u) => u.formula && u.id !== 'c' && u.id !== 'kml' && u !== (a === b ? b : null)).map((u) => esc(u.formula)).filter((t, i, arr) => arr.indexOf(t) === i).join(' · ') || 'Same unit'}</span>`;
+    }
+    $('#exact').innerHTML = exact;
+    $('#all').innerHTML = c.units.map((u) => `<tr data-to="${u.id}" class="${u.id === S.to ? 'is-to' : ''} ${u.id === S.from ? 'is-from' : ''}"><td>${esc(u.name)}${u.exact === false ? '<span class="sub">conventional</span>' : ''}</td><td class="n">${esc(U.format(U.convert(S.cat, S.from, u.id, v)))}</td></tr>`).join('');
+  }
+  const SYM = { mm: 'mm', cm: 'cm', m: 'm', km: 'km', in: 'in', ft: 'ft', yd: 'yd', mi: 'mi', nmi: 'nmi', mg: 'mg', g: 'g', kg: 'kg', t: 't', oz: 'oz', lb: 'lb', st: 'st', ston: 'short ton', lton: 'long ton', ozt: 'oz t', ct: 'ct', ml: 'mL', l: 'L', m3: 'm³', tsp: 'US tsp', tbsp: 'US tbsp', floz: 'US fl oz', cup: 'US cup', pt: 'US pt', qt: 'US qt', gal: 'US gal', mcup: 'metric cup', ukfloz: 'UK fl oz', ukpt: 'UK pt', ukgal: 'UK gal', in3: 'in³', ft3: 'ft³', cm2: 'cm²', m2: 'm²', ha: 'ha', km2: 'km²', in2: 'in²', ft2: 'ft²', yd2: 'yd²', ac: 'acre', mi2: 'mi²', mps: 'm/s', kmh: 'km/h', mph: 'mph', kn: 'kn', fps: 'ft/s', bit: 'bit', B: 'B', kB: 'kB', MB: 'MB', GB: 'GB', TB: 'TB', KiB: 'KiB', MiB: 'MiB', GiB: 'GiB', TiB: 'TiB', Mbit: 'Mbit', Gbit: 'Gbit', pa: 'Pa', kpa: 'kPa', bar: 'bar', atm: 'atm', psi: 'psi', mmhg: 'mmHg', inhg: 'inHg', j: 'J', kj: 'kJ', cal: 'cal', kcal: 'kcal', wh: 'Wh', kwh: 'kWh', btu: 'BTU', s: 's', min: 'min', h: 'h', d: 'day', wk: 'week', yr: 'year', c: '°C', f: '°F', k: 'K', kml: 'km/L', l100: 'L/100 km', mpg: 'mpg (US)', mpgu: 'mpg (UK)' };
+
+  $('#cats').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b || b.dataset.cat === S.cat) return; setCategory(b.dataset.cat); history.replaceState(null, '', '#' + b.dataset.cat); });
+  $('#form').addEventListener('input', render);
+  $('#form').addEventListener('change', render);
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#swap').addEventListener('click', () => { const f = $('#from').value; $('#from').value = $('#to').value; $('#to').value = f; const o = $('#out').textContent; if (o && o !== '—') $('#value').value = o.replace(/,/g, ''); render(); });
+  $('#copy').addEventListener('click', () => { const o = $('#out').textContent; if (o && o !== '—') CT.copy(o.replace(/,/g, '')); });
+  $('#all').addEventListener('click', (e) => { const r = e.target.closest('[data-to]'); if (!r) return; $('#to').value = r.dataset.to; render(); });
+  setCategory(S.cat, true);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Date Calculator</title>
+<meta name="description" content="Days between dates, adding days, weeks, months or years, exact age, and business days with US federal holidays. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#f7dd47">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .tabs-row { display: flex; gap: 4px; padding: 3px; border-radius: 8px; background: var(--raised); margin-bottom: var(--gap); overflow-x: auto; }
+  .tabs-row button { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; }
+  .tabs-row button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); }
+  .addrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .addrow .field > label { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .cals { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  .cal h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; font-family: var(--font-fig); font-size: 12.5px; text-align: center; }
+  .cal-grid .dow { color: var(--muted); font-family: var(--font); font-size: 11.5px; padding: 2px 0 4px; }
+  .cal-grid .c { height: 28px; display: grid; place-items: center; border-radius: 4px; position: relative; color: var(--text); }
+  .cal-grid .c.wk { color: var(--faint); background: var(--raised); }
+  .cal-grid .c.in { background: var(--data-soft); }
+  .cal-grid .c.in.biz { background: var(--data); color: var(--data-ink); }
+  .cal-grid .c.hol::after { content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--negative); }
+  .cal-grid .c.end { outline: 2px solid var(--text); outline-offset: -2px; }
+  .cal-grid .c.blank { background: none; }
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+  .cal-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+  .hol-list { display: grid; gap: 0; margin-top: 12px; }
+  .hol-list div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; }
+  .hol-list div + div { border-top: 1px solid var(--rule); }
+  .hol-list span:last-child { font-family: var(--font-fig); color: var(--muted); white-space: nowrap; }
+  @media (max-width: 520px) { .addrow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body data-tool="dates">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Everyday</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Date Calculator</h1>
+      <p class="sub" id="finding">Count days, add months, work out an exact age or a deadline in business days.</p>
+    </div>
+  </div>
+
+  <div class="tabs-row" role="tablist" aria-label="Calculation" id="tabs">
+    <button type="button" role="tab" data-mode="between" aria-selected="true">Between two dates</button>
+    <button type="button" role="tab" data-mode="add" aria-selected="false">Add or subtract</button>
+    <button type="button" role="tab" data-mode="age" aria-selected="false">Age</button>
+    <button type="button" role="tab" data-mode="work" aria-selected="false">Business days</button>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-5 form" id="form" novalidate autocomplete="off">
+      <div class="form" data-mode="between">
+        <div class="form-row">
+          <div class="field"><label for="b-start">Start date</label><input class="input" type="date" id="b-start"></div>
+          <div class="field"><label for="b-end">End date</label><input class="input" type="date" id="b-end"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="b-incl"><span>Count the end date too (both days inclusive)</span></label>
+      </div>
+
+      <div class="form" data-mode="add" hidden>
+        <div class="field"><label for="a-start">Start date</label><input class="input" type="date" id="a-start"></div>
+        <div class="segmented" role="radiogroup" aria-label="Add or subtract">
+          <label><input type="radio" name="a-op" id="a-plus" value="1" checked>Add</label>
+          <label><input type="radio" name="a-op" id="a-minus" value="-1">Subtract</label>
+        </div>
+        <div class="addrow">
+          <div class="field"><label for="a-y">Years</label><input class="input fig" type="number" id="a-y" min="0" step="1" value="0"></div>
+          <div class="field"><label for="a-m">Months</label><input class="input fig" type="number" id="a-m" min="0" step="1" value="0"></div>
+          <div class="field"><label for="a-w">Weeks</label><input class="input fig" type="number" id="a-w" min="0" step="1" value="0"></div>
+          <div class="field"><label for="a-d">Days</label><input class="input fig" type="number" id="a-d" min="0" step="1" value="90"></div>
+        </div>
+        <p class="hint">Years and months are added first, then weeks and days. Adding a month to 31 January gives the last day of February.</p>
+      </div>
+
+      <div class="form" data-mode="age" hidden>
+        <div class="field"><label for="g-birth">Date of birth</label><input class="input" type="date" id="g-birth"></div>
+        <div class="field"><label for="g-on">Age on</label><input class="input" type="date" id="g-on"></div>
+      </div>
+
+      <div class="form" data-mode="work" hidden>
+        <div class="segmented" role="radiogroup" aria-label="Business day question">
+          <label><input type="radio" name="w-q" id="w-count" value="count" checked>Count between dates</label>
+          <label><input type="radio" name="w-q" id="w-add" value="add">Find a deadline</label>
+        </div>
+        <div class="form-row">
+          <div class="field"><label for="w-start">Start date</label><input class="input" type="date" id="w-start"></div>
+          <div class="field" data-w="count"><label for="w-end">End date</label><input class="input" type="date" id="w-end"></div>
+          <div class="field" data-w="add" hidden><label for="w-n">Business days</label><input class="input fig" type="number" id="w-n" step="1" value="10"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="w-hol" checked><span>Skip US federal holidays (observed dates)</span></label>
+        <p class="hint" data-w="count">Counts Monday to Friday, including both the start and end dates.</p>
+        <p class="hint" data-w="add" hidden>The start date itself is not counted, like a spreadsheet WORKDAY function. Use a negative number to count back.</p>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </form>
+
+    <div class="span-7 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Result</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="kpis" id="kpis"></div>
+      </section>
+      <section class="panel" aria-labelledby="h-cal" id="cal-panel">
+        <header><h2 id="h-cal">On the calendar</h2><span class="meta" id="cal-meta"></span></header>
+        <div class="cals" id="cals"></div>
+        <div class="cal-legend" id="cal-legend"></div>
+        <div class="hol-list" id="hol-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>Dates are treated as whole calendar days in the Gregorian calendar, with no time of day, so daylight-saving changes and time zones never shift a result.</p>
+        <ul>
+          <li><strong>Days between</strong> is the end date minus the start date. Tick "count the end date" to include both days, for example when counting the days of a trip.</li>
+          <li><strong>Months and years</strong>: a month is complete when the same day of the month comes round. When that day does not exist (the 31st in a 30-day month, or 29 February in a common year), the last day of the month counts. Someone born on 29 February turns a year older on 28 February in common years by this rule; some laws use 1 March instead.</li>
+          <li><strong>Business days</strong> are Monday to Friday. US federal holidays follow 5 U.S.C. 6103 with the federal employee rule: a holiday that falls on a Saturday is observed the Friday before, and on a Sunday the Monday after. Private employers and other countries have different holidays.</li>
+          <li><strong>Week numbers</strong> follow ISO 8601: weeks start on Monday, and week 1 is the week with the year's first Thursday.</li>
+        </ul>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.law.cornell.edu/uscode/text/5/6103" rel="noopener" target="_blank">5 U.S. Code § 6103: federal holidays</a></li>
+          <li><a href="https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/" rel="noopener" target="_blank">US Office of Personnel Management: federal holidays and observed dates</a></li>
+          <li><a href="https://www.iso.org/iso-8601-date-and-time-format.html" rel="noopener" target="_blank">ISO 8601: date and time format, including week numbers</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, store, esc, num } = CT;
+  const D = DatesLogic;
+  const now = new Date();
+  const today = { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() };
+  const T = D.iso(today);
+  const dflt = { 'b-start': T, 'b-end': D.iso({ y: today.y, m: 12, d: 31 }), 'a-start': T, 'g-birth': '1990-05-15', 'g-on': T, 'w-start': T, 'w-end': D.iso(D.addDays(today, 30)) };
+  Object.entries(dflt).forEach(([id, v]) => { $('#' + id).value = v; });
+  let mode = store.get('dates:mode', 'between');
+  const WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const long = (dt) => new Intl.DateTimeFormat(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(new Date(D.num(dt) * 86400000));
+  const short = (dt) => new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(D.num(dt) * 86400000));
+  const plural = (n, w) => `${n.toLocaleString()} ${w}${Math.abs(n) === 1 ? '' : 's'}`;
+  const ymd = (r) => { const p = []; if (r.years) p.push(plural(r.years, 'year')); if (r.months) p.push(plural(r.months, 'month')); if (r.days || !p.length) p.push(plural(r.days, 'day')); return p.join(', '); };
+  const kpi = (label, value, sub) => `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
+  const get = (id) => { const v = D.parse($('#' + id).value); CT.invalid($('#' + id), v ? '' : 'Pick a date.'); return v; };
+
+  function setMode(m) {
+    mode = m; store.set('dates:mode', m);
+    $$('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
+    $$('#form > [data-mode]').forEach((f) => { f.hidden = f.dataset.mode !== m; });
+    render();
+  }
+
+  function render() {
+    $('#err').hidden = true;
+    let cal = null;
+    try {
+      if (mode === 'between') cal = between();
+      else if (mode === 'add') cal = adder();
+      else if (mode === 'age') cal = age();
+      else cal = work();
+    } catch (e) { $('#lead').innerHTML = '<span class="dim">—</span>'; $('#lead-note').textContent = e.message; $('#kpis').innerHTML = ''; cal = null; }
+    drawCalendar(cal);
+  }
+
+  function between() {
+    const a = get('b-start'), b = get('b-end');
+    if (!a || !b) throw new Error('Pick both dates.');
+    const incl = $('#b-incl').checked;
+    const r = D.diff(a, b);
+    const days = r.totalDays + (incl ? Math.sign(r.totalDays || 1) : 0);
+    $('#lead-label').textContent = incl ? 'Days, counting both dates' : 'Days between';
+    $('#lead').innerHTML = `${Math.abs(days).toLocaleString()}<small>${Math.abs(days) === 1 ? 'day' : 'days'}</small>`;
+    $('#lead-note').innerHTML = `${r.sign < 0 ? 'The end date is before the start date. ' : ''}That is <strong>${ymd(r)}</strong>${incl ? ' (plus the end day)' : ''}.`;
+    const wk = Math.floor(Math.abs(days) / 7), rem = Math.abs(days) % 7;
+    const biz = D.businessDays(a, b), bizH = D.businessDays(a, b, { holidays: true });
+    $('#kpis').innerHTML = kpi('Weeks', `${wk.toLocaleString()}`, rem ? `and ${plural(rem, 'day')}` : 'exactly') + kpi('Months', `${r.totalMonths.toLocaleString()}`, r.days ? `and ${plural(r.days, 'day')}` : 'exactly') + kpi('Weekdays', `${Math.abs(biz.count).toLocaleString()}`, 'both dates counted') + kpi('Minus US holidays', `${Math.abs(bizH.count).toLocaleString()}`, `${plural(bizH.holidaysOff, 'holiday')} off`);
+    $('#finding').innerHTML = `From ${short(a)} to ${short(b)} is <strong>${plural(Math.abs(r.totalDays), 'day')}</strong>${r.years || r.months ? `: ${ymd(r)}` : ''}.`;
+    const lo = r.sign < 0 ? b : a, hi = r.sign < 0 ? a : b;
+    return { from: lo, to: hi, holidays: false, ends: [a, b] };
+  }
+
+  function adder() {
+    const a = get('a-start');
+    if (!a) throw new Error('Pick a start date.');
+    const sign = Number($('input[name="a-op"]:checked').value);
+    const vals = ['a-y', 'a-m', 'a-w', 'a-d'].map((id) => { const v = num($('#' + id)); const ok = Number.isInteger(v) && v >= 0 && v <= 100000; CT.invalid($('#' + id), ok ? '' : 'Whole number'); return ok ? v : null; });
+    if (vals.includes(null)) throw new Error('Use whole numbers of 0 or more.');
+    const [y, m, w, dd] = vals;
+    const out = D.addDays(D.addMonths(a, sign * (y * 12 + m)), sign * (w * 7 + dd));
+    if (out.y < 1 || out.y > 9999) throw new Error('That lands outside the years 1 to 9999.');
+    const wk = D.isoWeek(out);
+    $('#lead-label').textContent = 'The date is';
+    $('#lead').textContent = short(out);
+    $('#lead-note').innerHTML = `<strong>${WD[D.weekday(out)]}</strong>, ISO week ${wk.week} of ${wk.year}.`;
+    const span = D.daysBetween(a, out);
+    $('#kpis').innerHTML = kpi('Calendar days', `${span > 0 ? '+' : ''}${span.toLocaleString()}`) + kpi('Weekdays', `${Math.abs(D.businessDays(a, out).count) - (D.weekday(a) % 6 ? 1 : 0)}`, 'start date not counted') + kpi('Day of the year', `${D.daysBetween({ y: out.y, m: 1, d: 1 }, out) + 1}`, `of ${D.isLeap(out.y) ? 366 : 365}`);
+    const parts = []; if (y) parts.push(plural(y, 'year')); if (m) parts.push(plural(m, 'month')); if (w) parts.push(plural(w, 'week')); if (dd || !parts.length) parts.push(plural(dd, 'day'));
+    $('#finding').innerHTML = `${short(a)} ${sign > 0 ? 'plus' : 'minus'} ${parts.join(', ')} is <strong>${long(out)}</strong>.`;
+    const lo = span < 0 ? out : a, hi = span < 0 ? a : out;
+    return { from: lo, to: hi, holidays: false, ends: [a, out] };
+  }
+
+  function age() {
+    const b = get('g-birth'), on = get('g-on');
+    if (!b || !on) throw new Error('Pick both dates.');
+    if (D.num(on) < D.num(b)) throw new Error('The date of birth is after the "age on" date.');
+    const r = D.diff(b, on);
+    $('#lead-label').textContent = 'Age';
+    $('#lead').innerHTML = `${r.years}<small>${r.years === 1 ? 'year' : 'years'}</small>`;
+    $('#lead-note').innerHTML = `Exactly <strong>${ymd(r)}</strong>, on ${short(on)}.`;
+    // next birthday
+    let k = r.years + 1, next = D.addYears(b, k);
+    if (r.months === 0 && r.days === 0) { next = on; k = r.years; }
+    const until = D.daysBetween(on, next);
+    $('#kpis').innerHTML = kpi('Next birthday', short(next), until === 0 ? 'today' : `in ${plural(until, 'day')}, a ${WD[D.weekday(next)]}`) + kpi('Days alive', r.totalDays.toLocaleString()) + kpi('Months', r.totalMonths.toLocaleString()) + kpi('Weeks', Math.floor(r.totalDays / 7).toLocaleString());
+    $('#finding').innerHTML = `Born ${short(b)}: <strong>${ymd(r)}</strong> old on ${short(on)}${until === 0 ? '. Happy birthday.' : `, with the next birthday in ${plural(until, 'day')}.`}`;
+    return { from: on, to: next, holidays: false, ends: [on, next] };
+  }
+
+  function work() {
+    const q = $('input[name="w-q"]:checked').value;
+    $$('[data-w]').forEach((el) => { el.hidden = el.dataset.w !== q; });
+    const a = get('w-start'), hol = $('#w-hol').checked;
+    if (!a) throw new Error('Pick a start date.');
+    if (q === 'count') {
+      const b = get('w-end'); if (!b) throw new Error('Pick an end date.');
+      const r = D.businessDays(a, b, { holidays: hol });
+      $('#lead-label').textContent = 'Business days';
+      $('#lead').innerHTML = `${Math.abs(r.count).toLocaleString()}<small>${Math.abs(r.count) === 1 ? 'day' : 'days'}</small>`;
+      $('#lead-note').innerHTML = `Monday to Friday from ${short(a)} to ${short(b)}, both counted${hol ? `, minus ${plural(r.holidaysOff, 'federal holiday')}` : ''}.`;
+      const cd = Math.abs(D.daysBetween(a, b)) + 1;
+      $('#kpis').innerHTML = kpi('Calendar days', cd.toLocaleString(), 'both counted') + kpi('Weekend days', (cd - Math.abs(r.weekdays)).toLocaleString()) + kpi('Holidays on weekdays', r.holidaysOff.toString());
+      $('#finding').innerHTML = `There are <strong>${plural(Math.abs(r.count), 'business day')}</strong> from ${short(a)} to ${short(b)}${hol ? ' after US federal holidays' : ''}.`;
+      return { from: D.num(a) <= D.num(b) ? a : b, to: D.num(a) <= D.num(b) ? b : a, holidays: hol, ends: [a, b], list: r.holidays };
+    }
+    const n = num($('#w-n'));
+    if (!Number.isInteger(n) || Math.abs(n) > 10000) { CT.invalid($('#w-n'), 'A whole number up to 10,000'); throw new Error('Enter a whole number of business days.'); }
+    CT.invalid($('#w-n'), '');
+    const out = D.addBusinessDays(a, n, { holidays: hol });
+    $('#lead-label').textContent = `${Math.abs(n)} business days ${n < 0 ? 'before' : 'after'}`;
+    $('#lead').textContent = short(out);
+    $('#lead-note').innerHTML = `<strong>${WD[D.weekday(out)]}</strong>${hol ? ', skipping US federal holidays' : ''}.`;
+    $('#kpis').innerHTML = kpi('Calendar days', Math.abs(D.daysBetween(a, out)).toLocaleString()) + kpi('ISO week', `${D.isoWeek(out).week}`, `of ${D.isoWeek(out).year}`);
+    $('#finding').innerHTML = `${Math.abs(n)} business days ${n < 0 ? 'before' : 'after'} ${short(a)} is <strong>${long(out)}</strong>.`;
+    const lo = D.num(out) < D.num(a) ? out : a, hi = D.num(out) < D.num(a) ? a : out;
+    return { from: lo, to: hi, holidays: hol, ends: [a, out], list: [...D.holidaySet(lo, hi).values()], skipStart: true };
+  }
+
+  /* Month calendars for the range: up to 3 months shown; longer spans show the first and last month. */
+  function drawCalendar(c) {
+    const panel = $('#cal-panel');
+    panel.hidden = !c;
+    if (!c) return;
+    const months = [];
+    let cur = { y: c.from.y, m: c.from.m };
+    const endKey = c.to.y * 12 + c.to.m;
+    const count = endKey - (cur.y * 12 + cur.m) + 1;
+    if (count <= 3) { for (let i = 0; i < count; i++) { months.push(cur); cur = { y: cur.m === 12 ? cur.y + 1 : cur.y, m: cur.m === 12 ? 1 : cur.m + 1 }; } }
+    else months.push({ y: c.from.y, m: c.from.m }, { y: c.to.y, m: c.to.m });
+    const hs = D.holidaySet({ y: months[0].y, m: months[0].m, d: 1 }, { y: months.at(-1).y, m: months.at(-1).m, d: D.daysInMonth(months.at(-1).y, months.at(-1).m) });
+    const lo = D.num(c.from), hi = D.num(c.to), ends = new Set(c.ends.map(D.num));
+    const fmtM = (m) => new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(m.y, m.m - 1, 1)));
+    $('#cals').innerHTML = months.map((mo, i) => {
+      const first = (D.weekday({ y: mo.y, m: mo.m, d: 1 }) + 6) % 7; // Monday-first
+      let cells = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x) => `<span class="dow">${x}</span>`).join('');
+      for (let k = 0; k < first; k++) cells += '<span class="c blank"></span>';
+      for (let day = 1; day <= D.daysInMonth(mo.y, mo.m); day++) {
+        const dt = { y: mo.y, m: mo.m, d: day }, n = D.num(dt), wd = D.weekday(dt);
+        const weekend = wd === 0 || wd === 6, inR = n >= lo && n <= hi, hol = hs.has(n);
+        const skip = c.skipStart && n === D.num(c.ends[0]);
+        const cls = ['c', weekend ? 'wk' : '', inR && !skip ? 'in' : '', inR && !skip && !weekend && !(c.holidays && hol) ? 'biz' : '', hol ? 'hol' : '', ends.has(n) ? 'end' : ''].join(' ');
+        cells += `<span class="${cls}" title="${short(dt)}${hol ? ' · ' + esc(hs.get(n).name) : ''}">${day}</span>`;
+      }
+      return `<div class="cal"><h3>${fmtM(mo)}${months.length === 2 && count > 3 && i === 0 ? ' …' : ''}</h3><div class="cal-grid">${cells}</div></div>`;
+    }).join('');
+    $('#cal-meta').textContent = count > 3 ? `First and last of ${count} months` : '';
+    $('#cal-legend').innerHTML = `<span><i style="background:var(--data)"></i>Weekday in range</span><span><i style="background:var(--data-soft)"></i>Weekend or holiday in range</span><span><i style="background:var(--raised)"></i>Weekend</span><span><i style="background:transparent;box-shadow:inset 0 0 0 2px var(--text)"></i>Start or end</span><span><i style="background:var(--negative);width:6px;height:6px;border-radius:50%;vertical-align:1px"></i>US federal holiday</span>`;
+    const list = (c.list || []).filter((h) => D.weekday(h.observed) % 6 !== 0);
+    $('#hol-list').innerHTML = list.length ? list.map((h) => `<div><span>${esc(h.name)}${D.num(h.observed) !== D.num(h.date) ? ' (observed)' : ''}</span><span>${short(h.observed)}</span></div>`).join('') : '';
+  }
+
+  $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (b) setMode(b.dataset.mode); });
+  $('#form').addEventListener('input', render);
+  $('#form').addEventListener('change', render);
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  setMode(mode);
+})();
+</script>
+</body>
+</html>

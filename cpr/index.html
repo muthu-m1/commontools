@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CPR Coach</title>
+<meta name="description" content="A hands-only CPR coach: a 110-per-minute compression beat with sound, a compression counter, rescuer swap reminders and the steps, following American Heart Association and European Resuscitation Council guidance.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#d0262c">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .call { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; align-items: center; padding: 18px var(--pad); border-radius: var(--radius-card); background: var(--data); color: var(--data-ink); margin-bottom: var(--gap); }
+  .call b { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .call p { margin-top: 2px; font-size: 15px; }
+  .call .nums { font-family: var(--font-fig); font-size: 28px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 18px; padding: 28px var(--pad); }
+  .pulse { position: relative; width: min(320px, 76vw); aspect-ratio: 1; border-radius: 50%; border: 0; cursor: pointer; background: var(--data); color: var(--data-ink); display: grid; place-items: center; text-align: center; font: inherit; will-change: transform; border: 10px solid var(--data-soft); background-clip: padding-box; }
+  .pulse .big { font-family: var(--font-fig); font-size: clamp(56px, 13vw, 88px); line-height: 1; font-weight: 500; letter-spacing: -0.03em; }
+  .pulse .lbl { font-size: 15px; font-weight: 600; margin-top: 6px; }
+  .pulse .start { font-size: clamp(20px, 5.4vw, 24px); font-weight: 700; line-height: 1.2; padding: 0 28px; }
+  .pulse .start small { display: block; font-size: 14px; font-weight: 500; margin-top: 6px; opacity: 0.9; }
+  .pulse.flash { background: color-mix(in srgb, var(--data) 70%, #000); }
+  .live { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; width: min(520px, 100%); background: var(--rule); border-radius: var(--radius-control); overflow: hidden; }
+  .live div { background: var(--surface); padding: 10px 6px; text-align: center; display: grid; align-content: space-between; gap: 2px; }
+  .live .k { font-size: 12px; line-height: 1.3; color: var(--muted); }
+  .live .v { font-family: var(--font-fig); font-size: 22px; font-weight: 500; }
+  .swap-now { color: var(--data); }
+  .ctrl { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; font-size: 15px; line-height: 1.5; }
+  .steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); font-weight: 600; font-size: 13px; font-family: var(--font-fig); }
+  .steps li b { font-weight: 600; }
+  .nums-table td:last-child { font-family: var(--font-fig); white-space: nowrap; }
+  @media (max-width: 640px) { .call { grid-template-columns: minmax(0, 1fr); } .call .nums { font-size: 22px; } }
+</style>
+</head>
+<body data-tool="cpr">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Health &amp; safety</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>CPR Coach</h1>
+      <p class="sub">If an adult suddenly collapses and is not breathing normally, call for help, then push hard and fast in the centre of the chest. This keeps the beat for you.</p>
+    </div>
+  </div>
+
+  <div class="call" role="note">
+    <div class="nums">911 · 112 · 999</div>
+    <div><b>Call emergency services first.</b><p>Put the phone on speaker and follow the dispatcher. Send someone to find an AED (defibrillator). Numbers for other countries are below.</p></div>
+  </div>
+
+  <div class="grid">
+    <section class="panel span-7" aria-labelledby="h-coach">
+      <h2 id="h-coach" class="sr-only">Compression beat</h2>
+      <div class="stage">
+        <button class="pulse" type="button" id="pulse" aria-pressed="false">
+          <span class="start" id="pulse-start">Start compressions<small>110 a minute, with sound</small></span>
+          <span id="pulse-live" hidden><span class="big" id="count">0</span><span class="lbl" style="display:block">Push. Push. Push.</span></span>
+        </button>
+        <div class="live" aria-live="off">
+          <div><div class="k">Compressions</div><div class="v" id="v-count">0</div></div>
+          <div><div class="k">Time</div><div class="v" id="v-time">0:00</div></div>
+          <div><div class="k">Swap rescuers in</div><div class="v" id="v-swap">2:00</div></div>
+        </div>
+        <div class="ctrl">
+          <button class="btn lg" type="button" id="stop" disabled>Stop</button>
+          <button class="btn lg" type="button" id="sound" aria-pressed="true">Sound on</button>
+        </div>
+        <p class="meta" id="status" style="text-align:center;max-width:46ch">Tap start, then push down on every beat. The screen stays on while the coach runs, where your device allows it.</p>
+      </div>
+    </section>
+
+    <section class="panel span-5" aria-labelledby="h-steps">
+      <header><h2 id="h-steps">Hands-only CPR for adults and teens</h2></header>
+      <ol class="steps">
+        <li><span><b>Make sure it is safe</b> for you to approach.</span></li>
+        <li><span><b>Check for a response.</b> Tap their shoulders and shout. If they do not respond and are not breathing normally, start CPR. Occasional gasps are not normal breathing.</span></li>
+        <li><span><b>Call emergency services</b> and put the phone on speaker. Ask someone to bring an AED.</span></li>
+        <li><span><b>Hand position:</b> heel of one hand on the centre of the chest, on the lower half of the breastbone, other hand on top. Arms straight, shoulders over your hands.</span></li>
+        <li><span><b>Push hard and fast:</b> at least 5 cm (2 in) deep but not more than 6 cm (2.4 in), 100 to 120 times a minute. Follow the beat.</span></li>
+        <li><span><b>Let the chest come all the way up</b> after each push, and keep pauses as short as possible.</span></li>
+        <li><span><b>Use the AED</b> as soon as it arrives: switch it on and follow its spoken instructions. Otherwise keep going until help takes over or the person starts breathing normally. If someone else can help, swap about every 2 minutes.</span></li>
+      </ol>
+    </section>
+  </div>
+
+  <div class="grid" style="margin-top:var(--gap)">
+    <section class="panel span-7" aria-labelledby="h-kids">
+      <header><h2 id="h-kids">Babies, children, drowning and overdose</h2></header>
+      <p>Hands-only CPR is for teens and adults who suddenly collapse. For babies and children, and for anyone who collapsed after drowning, a drug overdose or a breathing problem, CPR with rescue breaths is recommended if you are trained. If you are not, call emergency services: the dispatcher can talk you through what to do. Doing something is better than doing nothing.</p>
+      <div class="notice" style="margin-top:14px"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 7.2V11M8 5v.01"/></svg><p>This page is a coaching aid, not training. A CPR class takes a few hours and teaches the feel of the right depth. The Red Cross, the American Heart Association, St John Ambulance and many local services run them.</p></div>
+    </section>
+    <section class="panel flush span-5" aria-labelledby="h-nums">
+      <header style="padding:var(--pad) var(--pad) 0;margin-bottom:6px"><h2 id="h-nums">Emergency numbers</h2></header>
+      <div class="table-wrap">
+        <table class="nums-table"><thead><tr><th>Where</th><th class="n">Number</th></tr></thead><tbody>
+          <tr><td>United States, Canada, Mexico, Philippines</td><td class="n">911</td></tr>
+          <tr><td>European Union</td><td class="n">112</td></tr>
+          <tr><td>United Kingdom</td><td class="n">999 or 112</td></tr>
+          <tr><td>India</td><td class="n">112</td></tr>
+          <tr><td>Australia</td><td class="n">000</td></tr>
+          <tr><td>New Zealand</td><td class="n">111</td></tr>
+          <tr><td>Japan, South Korea (ambulance)</td><td class="n">119</td></tr>
+          <tr><td>China (ambulance)</td><td class="n">120</td></tr>
+          <tr><td>Brazil (ambulance)</td><td class="n">192</td></tr>
+          <tr><td>South Africa (ambulance)</td><td class="n">10177</td></tr>
+        </tbody></table>
+      </div>
+      <p class="meta" style="padding:10px var(--pad) var(--pad)">In many countries 112 also reaches emergency services from a mobile phone. Learn the number where you live and travel.</p>
+    </section>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">Why 110 a minute</h2>
+        <p>Both the American Heart Association and the European Resuscitation Council recommend chest compressions at 100 to 120 per minute for adults, about 5 to 6 cm deep, letting the chest rise fully between compressions and keeping interruptions short. The coach beats at 110, in the middle of that range, so small drifts in your timing stay inside it.</p>
+        <p>The click is scheduled on your device's audio clock rather than a page timer, so it stays steady even if the page is busy. The screen wake lock keeps the display on where the browser supports it.</p>
+        <p>Compression depth cannot be measured by a phone. Push hard: most people do not push deep enough at first.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://cpr.heart.org/en/cpr-courses-and-kits/hands-only-cpr" rel="noopener" target="_blank">American Heart Association: Hands-Only CPR</a></li>
+          <li><a href="https://cpr.heart.org/en/resuscitation-science/cpr-and-ecc-guidelines/adult-basic-life-support" rel="noopener" target="_blank">AHA Guidelines for CPR and ECC, Part 7: Adult Basic Life Support</a></li>
+          <li><a href="https://www.erc.edu/science-research/guidelines/guidelines-2025/" rel="noopener" target="_blank">European Resuscitation Council Guidelines 2025</a></li>
+          <li><a href="https://www.resus.org.uk/professional-library/2025-resuscitation-guidelines/adult-basic-life-support-guidelines" rel="noopener" target="_blank">Resuscitation Council UK: 2025 adult basic life support guidelines</a></li>
+          <li><a href="https://www.redcross.org/take-a-class/cpr/performing-cpr/hands-only-cpr" rel="noopener" target="_blank">American Red Cross: Hands-Only CPR</a></li>
+          <li><a href="https://en.wikipedia.org/wiki/List_of_emergency_telephone_numbers" rel="noopener" target="_blank">List of emergency telephone numbers by country</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $ } = CT;
+  const C = CPRLogic;
+  const step = C.interval();
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let ctx = null, gain = null, running = false, start = 0, scheduledUntil = 0, timer = null, raf = 0, wake = null, soundOn = true, perfStart = 0;
+
+  function now() { return ctx ? ctx.currentTime : (performance.now() - perfStart) / 1000; }
+
+  function click(at) {
+    if (!ctx || !soundOn) return;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square'; o.frequency.value = 1100;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.5, at + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.05);
+    o.connect(g).connect(gain);
+    o.start(at); o.stop(at + 0.06);
+  }
+
+  function schedule() {
+    if (!running) return;
+    const t = now() - start;
+    for (const b of C.beatsBetween(scheduledUntil, t + 0.25)) click(start + b);
+    scheduledUntil = Math.max(scheduledUntil, t + 0.25);
+  }
+
+  function frame() {
+    if (!running) return;
+    const t = now() - start;
+    const phase = (t % step) / step;
+    const pulse = $('#pulse');
+    if (reduce) pulse.classList.toggle('flash', phase < 0.18);
+    else { const s = phase < 0.22 ? 1 - 0.07 * Math.sin((phase / 0.22) * Math.PI) : 1; pulse.style.transform = `scale(${s.toFixed(4)})`; }
+    const n = C.count(t);
+    $('#count').textContent = n;
+    $('#v-count').textContent = n;
+    $('#v-time').textContent = C.clock(t);
+    const sw = C.swap(t);
+    const vs = $('#v-swap');
+    vs.textContent = C.clock(sw.next);
+    vs.classList.toggle('swap-now', sw.due > 0 && sw.next > C.SWAP_SECONDS - 10);
+    if (sw.due > 0 && sw.next > C.SWAP_SECONDS - 10) $('#status').textContent = 'If someone else can take over, swap now. Keep the pause short.';
+    else $('#status').textContent = 'Push hard and fast in the centre of the chest. Let it come all the way up.';
+    raf = requestAnimationFrame(frame);
+  }
+
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); } catch (e) { wake = null; }
+  }
+
+  let starting = false;
+  async function begin() {
+    if (running || starting) return;
+    starting = true;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC && !ctx) { ctx = new AC(); gain = ctx.createGain(); gain.gain.value = 0.9; gain.connect(ctx.destination); }
+      // if the audio clock will not run (autoplay rules, no audio device), fall back to the system clock, visual only
+      if (ctx && ctx.state !== 'running') await Promise.race([ctx.resume(), new Promise((r) => setTimeout(r, 400))]);
+      if (ctx && ctx.state !== 'running') ctx = null;
+    } catch (e) { ctx = null; }
+    starting = false;
+    perfStart = performance.now();
+    running = true;
+    start = now() + 0.1;
+    scheduledUntil = 0;
+    schedule();
+    timer = setInterval(schedule, 50);
+    raf = requestAnimationFrame(frame);
+    keepAwake();
+    $('#pulse-start').hidden = true; $('#pulse-live').hidden = false;
+    $('#pulse').setAttribute('aria-pressed', 'true');
+    $('#pulse').setAttribute('aria-label', 'Compression beat running');
+    $('#stop').disabled = false;
+    if (!ctx) $('#status').textContent = 'Sound is not available here, so follow the pulsing circle.';
+  }
+
+  function end() {
+    running = false;
+    clearInterval(timer); cancelAnimationFrame(raf);
+    if (wake) { wake.release().catch(() => {}); wake = null; }
+    const p = $('#pulse'); p.style.transform = ''; p.classList.remove('flash');
+    $('#pulse-start').hidden = false; $('#pulse-live').hidden = true;
+    $('#pulse').setAttribute('aria-pressed', 'false');
+    $('#pulse').removeAttribute('aria-label');
+    $('#stop').disabled = true;
+    $('#status').textContent = 'Stopped. Tap start to begin again.';
+  }
+
+  $('#pulse').addEventListener('click', () => { if (!running) begin(); });
+  $('#stop').addEventListener('click', end);
+  $('#sound').addEventListener('click', () => {
+    soundOn = !soundOn;
+    $('#sound').setAttribute('aria-pressed', String(soundOn));
+    $('#sound').textContent = soundOn ? 'Sound on' : 'Sound off';
+  });
+  document.addEventListener('visibilitychange', () => { if (running && document.visibilityState === 'visible' && !wake) keepAwake(); });
+  document.addEventListener('keydown', (e) => { if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); running ? end() : begin(); } });
+})();
+</script>
+</body>
+</html>

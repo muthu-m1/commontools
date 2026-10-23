@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Appliance Energy Cost</title>
+<meta name="description" content="What your appliances cost to run per day, month and year, including standby power, and how fast a more efficient replacement pays for itself. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1423b8">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .tabs-row { display: flex; gap: 4px; padding: 3px; border-radius: 8px; background: var(--raised); margin-bottom: var(--gap); overflow-x: auto; width: max-content; max-width: 100%; }
+  .tabs-row button { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; }
+  .tabs-row button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); }
+  .arow, .ahead { display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, 78px) 30px; gap: 6px; align-items: center; }
+  .ahead { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .arow .input { height: 38px; }
+  .arow .input.fig { padding: 0 9px; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .add-row select { width: auto; height: 32px; font-size: 14px; }
+  .amps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  details.helper summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; }
+  details.helper[open] summary { margin-bottom: 10px; }
+  .amps-out { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .amps-out b { color: var(--text); font-family: var(--font-fig); font-weight: 500; }
+  @media (max-width: 620px) {
+    .ahead { display: none; }
+    .arow { grid-template-columns: repeat(4, minmax(0, 1fr)) 30px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+    .arow [data-k="name"] { grid-column: 1 / 5; }
+    .arow .icon-btn { grid-column: 5; grid-row: 1; }
+    .arow .mini { display: grid; gap: 2px; font-size: 11.5px; color: var(--muted); }
+    .arow .input.fig { padding: 0 7px; }
+  }
+  @media (min-width: 621px) { .arow .mini > span { display: none; } }
+</style>
+</head>
+<body data-tool="energy">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Money</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Appliance Energy Cost</h1>
+      <p class="sub" id="finding">What your appliances cost to run, and whether a more efficient one pays for itself.</p>
+    </div>
+  </div>
+
+  <div class="tabs-row" role="tablist" aria-label="Calculator" id="tabs">
+    <button type="button" role="tab" data-mode="home" aria-selected="true">My appliances</button>
+    <button type="button" role="tab" data-mode="swap" aria-selected="false">Compare a replacement</button>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-7 form" id="form" novalidate autocomplete="off">
+      <header>
+        <h2>Electricity price</h2>
+        <label class="sr-only" for="cur">Currency</label>
+        <select class="input" id="cur" style="width:auto;height:32px;font-size:14px"></select>
+      </header>
+      <div class="field"><label for="price">Price per kWh</label><div class="affix"><span class="sym">$</span><input class="input fig" id="price" type="number" inputmode="decimal" min="0" step="any" value="0.17"><span>per kWh</span></div><div class="hint">Find it on your bill: the energy or usage charge per kWh, including taxes. Example figure shown.</div></div>
+
+      <div class="form" data-mode="home">
+        <header style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px"><h2 style="font-size:16px;font-weight:600">Appliances</h2><span class="meta">Typical figures; edit to match yours</span></header>
+        <div class="ahead"><span>Appliance</span><span>Watts</span><span>Hours/day</span><span>Days/yr</span><span>Standby W</span><span></span></div>
+        <div class="erows" id="rows"></div>
+        <div class="add-row">
+          <label class="sr-only" for="preset">Add an appliance</label>
+          <select class="input" id="preset"></select>
+          <button class="btn sm" type="button" id="add"></button>
+        </div>
+        <details class="helper">
+          <summary>Only know the amps?</summary>
+          <div class="amps">
+            <div class="field"><label for="amps">Amps on the label</label><div class="affix"><input class="input fig" id="amps" type="number" inputmode="decimal" min="0" step="any" placeholder="e.g. 12.5" data-no-persist><span>A</span></div></div>
+            <div class="field"><label for="volts">Mains voltage</label><select class="input" id="volts" data-no-persist><option value="120">120 V (North America)</option><option value="230">230 V (UK, EU, India, Australia)</option><option value="100">100 V (Japan)</option><option value="220">220 V</option><option value="240">240 V</option></select></div>
+          </div>
+          <p class="amps-out" id="amps-out">Watts = amps × volts.</p>
+        </details>
+      </div>
+
+      <div class="form" data-mode="swap" hidden>
+        <div class="form-row">
+          <div class="field"><label for="old-w">Current appliance</label><div class="affix"><input class="input fig" id="old-w" type="number" inputmode="decimal" min="0" step="any" value="60"><span>W</span></div></div>
+          <div class="field"><label for="new-w">Replacement</label><div class="affix"><input class="input fig" id="new-w" type="number" inputmode="decimal" min="0" step="any" value="9"><span>W</span></div></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label for="s-hours">Hours per day</label><input class="input fig" id="s-hours" type="number" inputmode="decimal" min="0" max="24" step="any" value="5"></div>
+          <div class="field"><label for="s-days">Days per year</label><input class="input fig" id="s-days" type="number" inputmode="numeric" min="1" max="365" step="1" value="365"></div>
+          <div class="field"><label for="s-qty">How many</label><input class="input fig" id="s-qty" type="number" inputmode="numeric" min="1" step="1" value="8"></div>
+        </div>
+        <div class="field"><label for="s-cost">Cost of the replacements</label><div class="affix"><span class="sym">$</span><input class="input fig" id="s-cost" type="number" inputmode="decimal" min="0" step="any" value="24"></div><div class="hint">The total for all of them. Example: eight LED bulbs replacing 60 W incandescent bulbs.</div></div>
+      </div>
+    </form>
+
+    <div class="span-5 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Cost per year</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="kpis" id="kpis"></div>
+      </section>
+      <section class="panel" aria-labelledby="h-viz">
+        <header><h2 id="h-viz">Cost per year by appliance</h2><span class="meta" id="viz-meta"></span></header>
+        <div class="chart" id="viz"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <div class="formula">Energy (kWh/yr) = watts × hours per day × days per year ÷ 1000
+Standby (kWh/yr) = standby watts × (8,760 − hours on per year) ÷ 1000
+Cost per year    = (energy + standby) × price per kWh × how many
+Per month = per year ÷ 12      Per day = per year ÷ 365
+Watts            = amps × volts
+Payback (years)  = cost of replacement ÷ yearly saving</div>
+        <p>This is the method the US Department of Energy gives for estimating appliance use. A kilowatt-hour (kWh) is 1,000 watts for one hour, the unit your bill uses. Standby power is what a device draws while plugged in and switched off or idle; it is counted for every hour of the year the device is not in use.</p>
+        <h3>Getting good numbers</h3>
+        <ul>
+          <li>The wattage is usually on a label on the back or bottom, or in the manual. A plug-in energy meter gives the real figure.</li>
+          <li>Labels often show the maximum power. Many devices use less most of the time, so a label-based estimate can be on the high side.</li>
+          <li>Refrigerators, freezers, heaters and air conditioners switch on and off by themselves. Enter the hours they actually run, not 24. For a fridge, the yearly kWh on its energy label is the best guide.</li>
+          <li>Amps × volts is exact for heaters and kettles. For motors and electronics it is an upper limit.</li>
+        </ul>
+        <h3>What this leaves out</h3>
+        <p>A single flat price per kWh is used. If your tariff changes by time of day, by season or by how much you use, use the rate that applies when the appliance runs. Fixed daily charges on your bill do not change with use and are not included. Payback is simple payback: no interest, no price changes.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://web.archive.org/web/20241231180235/https://www.energy.gov/energysaver/estimating-appliance-and-home-electronic-energy-use" rel="noopener" target="_blank">US Department of Energy: estimating appliance and home electronic energy use (archived copy from December 2024; the page has since been removed from energy.gov)</a></li>
+          <li><a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" rel="noopener" target="_blank">US EIA: average price of electricity by state</a></li>
+          <li><a href="https://www.energystar.gov/" rel="noopener" target="_blank">ENERGY STAR: efficient appliance ratings</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="../assets/charts.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, fmt, store, persist, invalid, icon, esc } = CT;
+  const E = EnergyLogic;
+  const CURRENCIES = [['USD', 'US dollar'], ['EUR', 'Euro'], ['GBP', 'British pound'], ['CAD', 'Canadian dollar'], ['AUD', 'Australian dollar'], ['NZD', 'New Zealand dollar'], ['INR', 'Indian rupee'], ['JPY', 'Japanese yen'], ['CNY', 'Chinese yuan'], ['CHF', 'Swiss franc'], ['SGD', 'Singapore dollar'], ['MXN', 'Mexican peso'], ['BRL', 'Brazilian real'], ['ZAR', 'South African rand'], ['NGN', 'Nigerian naira'], ['PHP', 'Philippine peso'], ['KES', 'Kenyan shilling']];
+  $('#cur').innerHTML = CURRENCIES.map(([c, n]) => `<option value="${c}">${c} · ${n}</option>`).join('');
+  $('#preset').innerHTML = E.PRESETS.map((p) => `<option value="${p.id}">${esc(p.name)} (${p.watts} W)</option>`).join('') + '<option value="custom">Something else</option>';
+  $('#add').innerHTML = icon('plus') + '<span>Add</span>';
+  const form = $('#form');
+  persist(form, 'energy');
+  const symbolOf = (cur) => { try { return new Intl.NumberFormat('en', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency').value; } catch (e) { return cur; } };
+
+  const fromPreset = (id) => { const p = E.PRESETS.find((x) => x.id === id); return { name: p.name, watts: p.watts, hours: p.hours, days: p.days || 365, standby: p.standby || 0 }; };
+  const S = store.get('energy:state', null) || { mode: 'home', items: ['fridge', 'tv', 'laptop', 'router', 'kettle', 'washer', 'incandescent'].map(fromPreset) };
+  const save = () => store.set('energy:state', S);
+  const FIELDS = [['watts', 'Watts', 'decimal', 'any'], ['hours', 'Hours/day', 'decimal', 'any'], ['days', 'Days/yr', 'numeric', '1'], ['standby', 'Standby W', 'decimal', 'any']];
+
+  function drawRows() {
+    $('#rows').innerHTML = S.items.map((it, i) => `<div class="arow" data-i="${i}">
+      <input class="input" data-k="name" value="${esc(it.name)}" placeholder="Appliance" aria-label="Appliance name">
+      ${FIELDS.map(([k, l, im, st]) => `<label class="mini"><span>${l}</span><input class="input fig" data-k="${k}" type="number" inputmode="${im}" min="0" step="${st}" value="${it[k]}" aria-label="${l} for ${esc(it.name || 'appliance')}"></label>`).join('')}
+      <button class="icon-btn" type="button" data-rm="${i}" aria-label="Remove ${esc(it.name || 'appliance')}">${icon('x')}</button></div>`).join('') || '<div class="empty">No appliances yet. Add one below.</div>';
+  }
+
+  function setMode(m) {
+    S.mode = m; save();
+    $$('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
+    $$('#form > [data-mode]').forEach((f) => { f.hidden = f.dataset.mode !== m; });
+    render();
+  }
+  const kpi = (l, v, s) => `<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}${s ? `<small>${s}</small>` : ''}</div></div>`;
+  const dash = '<span class="dim">—</span>';
+
+  function render() {
+    const cur = $('#cur').value;
+    $$('.sym').forEach((el) => { el.textContent = symbolOf(cur); });
+    const price = num($('#price'));
+    const okPrice = invalid($('#price'), price >= 0 && price < 1000 ? '' : 'Enter the price per kWh');
+    // amps helper
+    const a = num($('#amps'));
+    $('#amps-out').innerHTML = a > 0 ? `${fmt.smart(a, 2)} A × ${$('#volts').value} V = <b>${fmt.smart(E.wattsFromAmps(a, Number($('#volts').value)), 1)} W</b> at most.` : 'Watts = amps × volts.';
+    if (!okPrice) { $('#lead').innerHTML = dash; $('#lead-note').textContent = 'Check the highlighted fields.'; $('#kpis').innerHTML = ''; return; }
+    const d = CT.currencyDigits(cur);
+    const m = (v) => fmt.money(v, cur, Math.abs(v) >= 100 ? 0 : d);
+    const mm = (v) => fmt.money(v, cur);
+    if (S.mode === 'home') renderHome(price, m, mm); else renderSwap(price, m, mm);
+  }
+
+  function renderHome(price, m, mm) {
+    $('#lead-label').textContent = 'Cost per year';
+    $('#h-viz').textContent = 'Cost per year by appliance';
+    let bad = 0;
+    const items = [];
+    $$('#rows .arow').forEach((row) => {
+      const it = S.items[Number(row.dataset.i)];
+      const v = {};
+      let ok = true;
+      FIELDS.forEach(([k]) => {
+        const el = row.querySelector(`[data-k="${k}"]`);
+        const x = num(el);
+        const good = k === 'hours' ? x >= 0 && x <= 24 : k === 'days' ? Number.isInteger(x) && x >= 0 && x <= 365 : x >= 0 && x < 1e6;
+        el.setAttribute('aria-invalid', good ? 'false' : 'true');
+        if (!good) ok = false;
+        v[k] = x;
+      });
+      if (ok) items.push({ name: it.name || 'Appliance', ...v }); else bad++;
+    });
+    const h = E.household(items, price);
+    $('#lead').innerHTML = items.length ? m(h.costPerYear) : dash;
+    $('#lead-note').innerHTML = !items.length ? 'Add an appliance to see its running cost.' : `${fmt.num(h.kwhPerYear, 0)} kWh a year at ${mm(price)} per kWh${bad ? `. <span class="pill warn">${bad} row${bad > 1 ? 's' : ''} left out</span> hours must be 0–24 and days 0–365` : ''}.`;
+    const share = h.kwhPerYear > 0 ? h.standbyKwh / h.kwhPerYear : 0;
+    $('#kpis').innerHTML = kpi('Per month', items.length ? m(h.costPerMonth) : dash, items.length ? `${fmt.num(h.kwhPerMonth, 0)} kWh` : '') + kpi('Per day', items.length ? mm(h.costPerDay) : dash, items.length ? `${fmt.num(h.kwhPerDay, 2)} kWh` : '') + kpi('Standby', h.standbyKwh > 0 ? m(h.standbyCost) : dash, h.standbyKwh > 0 ? `${fmt.pct(share)} of the energy, a year` : 'none entered');
+    const rows = h.rows.filter((r) => r.costPerYear > 0).sort((x, y) => y.costPerYear - x.costPerYear);
+    $('#viz-meta').textContent = rows.length ? 'per year' : '';
+    if (rows.length) Charts.barList($('#viz'), rows.map((r) => ({ label: r.name, value: r.costPerYear })), { format: (v) => m(v) }); else $('#viz').innerHTML = '<div class="empty">Your appliances appear here.</div>';
+    if (rows.length) {
+      const top = rows[0];
+      $('#finding').innerHTML = `These appliances cost about <strong>${m(h.costPerYear)}</strong> a year to run (${m(h.costPerMonth)} a month). The biggest is the ${esc(top.name.toLowerCase())} at ${m(top.costPerYear)}, ${fmt.pct(top.costPerYear / h.costPerYear, 0)} of the total.`;
+    } else $('#finding').textContent = 'What your appliances cost to run, and whether a more efficient one pays for itself.';
+  }
+
+  function renderSwap(price, m, mm) {
+    $('#lead-label').textContent = 'Saving per year';
+    $('#h-viz').textContent = 'Running cost per year';
+    const ow = num($('#old-w')), nw = num($('#new-w')), hrs = num($('#s-hours')), days = num($('#s-days')), qty = num($('#s-qty')), cost = num($('#s-cost'));
+    const ok = invalid($('#old-w'), ow >= 0 ? '' : 'Enter the wattage') & invalid($('#new-w'), nw >= 0 ? '' : 'Enter the wattage') & invalid($('#s-hours'), hrs >= 0 && hrs <= 24 ? '' : '0 to 24') & invalid($('#s-days'), Number.isInteger(days) && days >= 1 && days <= 365 ? '' : '1 to 365') & invalid($('#s-qty'), Number.isInteger(qty) && qty >= 1 ? '' : 'A whole number') & invalid($('#s-cost'), cost >= 0 ? '' : 'Enter a cost, or 0');
+    if (!ok) { $('#lead').innerHTML = dash; $('#lead-note').textContent = 'Check the highlighted fields.'; $('#kpis').innerHTML = ''; return; }
+    const c = E.compare({ oldWatts: ow, newWatts: nw, hours: hrs, days, qty, price, upfront: cost });
+    $('#lead').innerHTML = c.saving > 0 ? m(c.saving) : c.saving < 0 ? `<span style="color:var(--negative)">${m(c.saving)}</span>` : m(0);
+    const pb = c.paybackYears;
+    const pbText = !Number.isFinite(pb) ? 'Never' : pb === 0 ? 'Immediately' : pb < 1 ? fmt.months(Math.max(1, Math.ceil(pb * 12))) : `${fmt.num(pb, 1)} years`;
+    $('#lead-note').innerHTML = c.saving > 0 ? `${fmt.num(c.kwhSaved, 0)} kWh a year less, at ${mm(price)} per kWh.` : c.saving < 0 ? '<span class="pill neg">Costs more</span> The replacement uses more power.' : 'Same power, so no saving.';
+    const ten = c.saving * 10 - cost;
+    $('#kpis').innerHTML = kpi('Pays for itself in', pbText, Number.isFinite(pb) && pb > 0 ? `on ${m(cost)} up front` : '') + kpi('Over 10 years', c.saving > 0 ? m(ten) : dash, c.saving > 0 ? 'saving, after the cost' : '') + kpi('Energy saved', `${fmt.num(Math.max(0, c.kwhSaved), 0)} kWh`, 'a year');
+    Charts.barList($('#viz'), [{ label: 'Current', value: c.oldCost }, { label: 'Replacement', value: c.newCost }], { format: (v) => m(v) });
+    $('#viz-meta').textContent = `${qty} × ${fmt.smart(hrs, 2)} h a day`;
+    $('#finding').innerHTML = c.saving > 0 ? `Replacing ${qty === 1 ? `a ${fmt.smart(ow, 1)} W appliance with a ${fmt.smart(nw, 1)} W one` : `${qty} × ${fmt.smart(ow, 1)} W with ${fmt.smart(nw, 1)} W`} saves <strong>${m(c.saving)}</strong> a year${pb === 0 ? '' : ` and pays for itself in ${pbText}`}.` : 'The replacement does not use less power, so it will not save money on electricity.';
+  }
+
+  $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
+  $('#rows').addEventListener('input', (e) => {
+    const row = e.target.closest('.arow'); if (!row) return;
+    const it = S.items[Number(row.dataset.i)], k = e.target.dataset.k;
+    it[k] = k === 'name' ? e.target.value : e.target.value === '' ? '' : Number(e.target.value);
+    save(); render();
+  });
+  $('#rows').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rm]'); if (!b) return;
+    S.items.splice(Number(b.dataset.rm), 1); save(); drawRows(); render();
+  });
+  $('#add').addEventListener('click', () => {
+    const id = $('#preset').value;
+    S.items.push(id === 'custom' ? { name: '', watts: 100, hours: 1, days: 365, standby: 0 } : fromPreset(id));
+    save(); drawRows(); render();
+    const rows = $$('#rows .arow'); const last = rows[rows.length - 1];
+    if (last) { const f = last.querySelector(id === 'custom' ? '[data-k="name"]' : '[data-k="hours"]'); f.focus(); f.select && f.select(); }
+  });
+  form.addEventListener('input', (e) => { if (!e.target.closest('#rows')) render(); });
+  form.addEventListener('change', (e) => { if (!e.target.closest('#rows')) render(); });
+  form.addEventListener('submit', (e) => e.preventDefault());
+  drawRows();
+  setMode(S.mode === 'swap' ? 'swap' : 'home');
+})();
+</script>
+</body>
+</html>

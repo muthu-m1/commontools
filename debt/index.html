@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Debt Payoff Planner</title>
+<meta name="description" content="Compare the avalanche and snowball methods month by month: your debt-free date, total interest, and the order your debts get paid off. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1423b8">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .debt-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .erow .name { height: 34px; font-weight: 500; background: transparent; border-color: transparent; padding: 0 6px; margin-left: -6px; }
+  .erow .name:hover, .erow .name:focus { background: var(--surface); border-color: var(--control); }
+  .erow .warn-line { font-size: 12.5px; color: var(--warning); }
+  .add-row { justify-self: start; }
+  .strategy-help { color: var(--muted); font-size: 13.5px; }
+  .lanes { position: relative; }
+  .lanes svg text { font-family: var(--font); }
+  .compare td:first-child { font-weight: 500; }
+  .compare tr.chosen td { background: var(--data-soft); }
+  .compare tr.chosen td:first-child { box-shadow: inset 3px 0 0 var(--data); }
+  .budget-line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: var(--radius-control); background: var(--raised); font-size: 14px; }
+  .budget-line b { font-family: var(--font-fig); font-weight: 500; }
+  @media (max-width: 560px) { .compare .t-col { display: none; } }
+  @media (max-width: 480px) { .debt-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } .debt-fields .field:first-child { grid-column: 1 / -1; } }
+</style>
+</head>
+<body data-tool="debt">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Money</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Debt Payoff Planner</h1>
+      <p class="sub" id="finding">See when you will be debt-free and how much interest each method costs.</p>
+    </div>
+    <div class="title-actions no-print">
+      <button class="btn ghost" type="button" id="reset">Reset to example</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-5 form" id="form" novalidate autocomplete="off">
+      <header><h2>Your debts</h2><span class="meta" id="debt-count"></span></header>
+      <p class="notice" id="example-note" hidden>These are example debts. Type over them with your own.</p>
+      <div class="erows" id="rows"></div>
+      <button class="btn sm add-row" type="button" id="add"></button>
+
+      <div class="field" style="border-top:1px solid var(--rule);padding-top:16px">
+        <label for="extra">Extra you can pay each month</label>
+        <div class="affix"><span>$</span><input class="input fig" id="extra" type="number" inputmode="decimal" min="0" step="any" value="250"></div>
+        <div class="hint">On top of all the minimum payments. When a debt is paid off, its minimum stays in your plan and moves to the next debt.</div>
+      </div>
+      <div class="budget-line"><span>Total each month</span><b id="budget">—</b></div>
+
+      <div class="field">
+        <span class="label" id="strategy-label">Which debt gets the extra first</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="strategy-label">
+          <label><input type="radio" name="strategy" id="s-avalanche" value="avalanche" checked>Avalanche</label>
+          <label><input type="radio" name="strategy" id="s-snowball" value="snowball">Snowball</label>
+        </div>
+        <p class="strategy-help" id="strategy-help"></p>
+      </div>
+    </form>
+
+    <div class="span-7 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div id="alert" hidden></div>
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Debt-free</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">Total interest</div><div class="kpi-value" id="k-int">—</div></div>
+          <div class="kpi"><div class="kpi-label">Saved vs. minimums only</div><div class="kpi-value data" id="k-saved">—</div></div>
+          <div class="kpi"><div class="kpi-label">Total you will pay</div><div class="kpi-value" id="k-paid">—</div></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-lanes">
+        <header><h2 id="h-lanes">Payoff order</h2><div class="legend" id="lg-lanes"></div></header>
+        <div class="lanes" id="lanes"></div>
+      </section>
+
+      <section class="panel flush" aria-labelledby="h-compare">
+        <header style="padding:var(--pad) var(--pad) 0;margin-bottom:8px"><h2 id="h-compare">Every method, same budget</h2></header>
+        <div class="table-wrap">
+          <table class="compare"><thead><tr><th>Method</th><th class="n">Debt-free</th><th class="n t-col">Time</th><th class="n">Total interest</th></tr></thead><tbody id="compare"></tbody></table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-bal">
+        <header><h2 id="h-bal">Total balance</h2><div id="lg-bal"></div></header>
+        <div class="chart" id="ch-bal"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>The plan is simulated one month at a time, in cents:</p>
+        <ol>
+          <li>Each open debt is charged a month of interest: balance × APR ÷ 12.</li>
+          <li>Every open debt receives its minimum payment.</li>
+          <li>The rest of your monthly total goes to one debt at a time, in the method's order. When a debt is cleared, its minimum stays in the plan and joins the extra for the next debt.</li>
+        </ol>
+        <h3>The two methods</h3>
+        <ul>
+          <li><strong>Avalanche</strong> sends the extra to the highest interest rate first. It always costs the least interest.</li>
+          <li><strong>Snowball</strong> sends the extra to the smallest balance first. It clears whole debts sooner, which many people find easier to stick with.</li>
+          <li><strong>Minimums only</strong> pays each debt its own minimum and nothing more, for comparison.</li>
+        </ul>
+        <h3>Assumptions</h3>
+        <p>Minimum payments are treated as fixed amounts. Many credit cards recalculate the minimum as a share of the balance, so it shrinks as you pay down; paying the fixed amount you enter here is faster than paying a shrinking minimum. Card issuers charge interest daily on the average daily balance, so real interest can differ slightly from the monthly estimate. No new purchases, fees or rate changes are assumed.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.consumerfinance.gov/archive/blog/how-reduce-your-debt/" rel="noopener" target="_blank">CFPB: How to reduce your debt (the highest-rate and smallest-balance approaches)</a></li>
+          <li><a href="https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-card-interest-rate-what-does-apr-mean-en-44/" rel="noopener" target="_blank">CFPB: What is a credit card interest rate? What does APR mean?</a></li>
+        </ul>
+        <p class="meta" style="margin-top:14px">Your debts are saved only in this browser so the plan is here when you come back. Reset clears them.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="../assets/charts.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, fmt, store, invalid, icon, esc } = CT;
+  const EXAMPLE = [
+    { name: 'Credit card', balance: 4200, apr: 24.99, min: 126 },
+    { name: 'Store card', balance: 900, apr: 29.99, min: 35 },
+    { name: 'Car loan', balance: 11500, apr: 7.9, min: 310 },
+    { name: 'Student loan', balance: 18000, apr: 5.5, min: 195 },
+  ];
+  const HELP = {
+    avalanche: 'Highest interest rate first. Costs the least interest overall.',
+    snowball: 'Smallest balance first. Clears individual debts sooner.',
+  };
+  const m = (v, d) => fmt.money(v, 'USD', d);
+  const css = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+  const now = new Date();
+  const startIdx = now.getFullYear() * 12 + now.getMonth() + 1; // first payment: next month
+  const dateOf = (month) => { const i = startIdx + month - 1; return new Date(Math.floor(i / 12), i % 12, 1); };
+  const monthName = (month) => new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(dateOf(month));
+
+  $('#add').innerHTML = icon('plus') + '<span>Add a debt</span>';
+  let uid = 0;
+
+  function rowHTML(d) {
+    const id = 'd' + (uid++);
+    return `<div class="erow" data-row>
+      <div class="erow-head"><label class="sr-only" for="${id}-name">Debt name</label><input class="input name" id="${id}-name" data-k="name" value="${esc(d.name || '')}" placeholder="Name this debt"><button class="icon-btn" type="button" data-remove aria-label="Remove this debt">${icon('x')}</button></div>
+      <div class="debt-fields">
+        <div class="field"><label for="${id}-bal">Balance</label><div class="affix"><span>$</span><input class="input fig" id="${id}-bal" data-k="balance" type="number" inputmode="decimal" min="0" step="any" value="${d.balance ?? ''}"></div></div>
+        <div class="field"><label for="${id}-apr">APR</label><div class="affix"><input class="input fig" id="${id}-apr" data-k="apr" type="number" inputmode="decimal" min="0" max="100" step="any" value="${d.apr ?? ''}"><span>%</span></div></div>
+        <div class="field"><label for="${id}-min">Minimum</label><div class="affix"><span>$</span><input class="input fig" id="${id}-min" data-k="min" type="number" inputmode="decimal" min="0" step="any" value="${d.min ?? ''}"></div></div>
+      </div>
+      <div class="warn-line" data-warn hidden></div>
+    </div>`;
+  }
+  function setRows(list) { $('#rows').innerHTML = list.map(rowHTML).join(''); }
+
+  function readRows() {
+    let ok = true;
+    const debts = $$('[data-row]').map((row) => {
+      const g = (k) => row.querySelector(`[data-k="${k}"]`);
+      const name = g('name').value.trim();
+      const balance = num(g('balance')), apr = num(g('apr')), min = num(g('min'));
+      if (!invalid(g('balance'), balance > 0 ? '' : 'Enter the balance.')) ok = false;
+      if (!invalid(g('apr'), apr >= 0 && apr <= 100 ? '' : '0 to 100.')) ok = false;
+      if (!invalid(g('min'), min > 0 ? '' : 'Enter the minimum.')) ok = false;
+      return { name, balance, apr, min, row };
+    });
+    return { debts, ok };
+  }
+
+  function save() {
+    const list = $$('[data-row]').map((row) => ({ name: row.querySelector('[data-k="name"]').value, balance: num(row.querySelector('[data-k="balance"]')), apr: num(row.querySelector('[data-k="apr"]')), min: num(row.querySelector('[data-k="min"]')) }));
+    store.set('debt:state', { list, extra: $('#extra').value, strategy: $('input[name="strategy"]:checked').value });
+  }
+
+  function render() {
+    const strategy = $('input[name="strategy"]:checked').value;
+    $('#strategy-help').textContent = HELP[strategy];
+    const { debts, ok: rowsOk } = readRows();
+    const extra = num($('#extra'));
+    const extraOk = invalid($('#extra'), extra >= 0 ? '' : 'Enter 0 or more.');
+    $('#debt-count').textContent = debts.length === 1 ? '1 debt' : debts.length + ' debts';
+    const alert = $('#alert');
+    alert.hidden = true;
+    if (!debts.length) { blank('Add a debt to start.'); return; }
+    if (!rowsOk || !extraOk) { blank('Fix the highlighted fields to see your plan.'); return; }
+    const names = debts.map((d, i) => d.name || 'Debt ' + (i + 1));
+    const minSum = debts.reduce((a, d) => a + d.min, 0);
+    $('#budget').textContent = m(minSum + extra);
+
+    const plans = {
+      avalanche: DebtLogic.simulate(debts, { extra, strategy: 'avalanche' }),
+      snowball: DebtLogic.simulate(debts, { extra, strategy: 'snowball' }),
+      minimum: DebtLogic.simulate(debts, { extra: 0, strategy: 'minimum' }),
+    };
+    const plan = plans[strategy], minPlan = plans.minimum;
+
+    // warnings on rows whose minimum does not cover a month of interest
+    debts.forEach((d) => {
+      const w = d.row.querySelector('[data-warn]');
+      const covers = DebtLogic.coversInterest(d);
+      w.hidden = covers;
+      if (!covers) w.textContent = `This minimum is less than a month's interest (${m(d.balance * d.apr / 1200)}), so on its own this debt grows.`;
+    });
+
+    if (!plan.done) {
+      alert.hidden = false;
+      alert.className = 'notice neg';
+      alert.style.marginBottom = '16px';
+      alert.innerHTML = icon('alert') + '<p>At this monthly total the interest grows faster than the payments, so these debts never get paid off. Raise the extra amount.</p>';
+      $('#lead').innerHTML = 'Never';
+      $('#lead-note').textContent = '';
+      ['#k-int', '#k-saved', '#k-paid'].forEach((s) => { $(s).innerHTML = '<span class="dim">—</span>'; });
+    } else {
+      $('#lead').innerHTML = `${monthName(plan.months)}<small>${fmt.months(plan.months)}</small>`;
+      const first = plan.debts.slice().filter((d) => d.payoff).sort((a, b) => a.payoff - b.payoff)[0];
+      $('#lead-note').innerHTML = `${debts.length} debt${debts.length > 1 ? 's' : ''} cleared with ${m(minSum + extra)} a month. The first, <strong>${esc(names[first.index])}</strong>, is gone by ${monthName(first.payoff)}.`;
+      $('#k-int').textContent = m(plan.totalInterest, 0);
+      $('#k-paid').textContent = m(plan.totalPaid, 0);
+      if (minPlan.done) {
+        const saved = minPlan.totalInterest - plan.totalInterest;
+        $('#k-saved').innerHTML = `${m(saved, 0)}<small>${minPlan.months - plan.months > 0 ? fmt.months(minPlan.months - plan.months) + ' sooner' : 'same time'}</small>`;
+      } else {
+        $('#k-saved').innerHTML = `All of it<small>minimums alone never finish</small>`;
+      }
+    }
+
+    // finding
+    const a = plans.avalanche, s = plans.snowball;
+    let sentence = '';
+    if (a.done && s.done) {
+      const diff = s.totalInterest - a.totalInterest;
+      sentence = `With ${m(extra, 0)} extra a month you are debt-free by <strong>${monthName(plan.months)}</strong>. ` + (diff >= 1 ? `Avalanche saves ${m(diff, 0)} in interest over snowball${s.months !== a.months ? ` and ${Math.abs(s.months - a.months) === 1 ? 'a month' : fmt.months(Math.abs(s.months - a.months))} ${s.months > a.months ? 'of time' : ''}` : ''}.` : `Both methods cost about the same here.`);
+      if (minPlan.done) sentence += ` Minimum payments alone would take until ${monthName(minPlan.months)}.`;
+      else sentence += ` Minimum payments alone would never clear them.`;
+    } else sentence = 'Your monthly total does not cover the interest yet.';
+    $('#finding').innerHTML = sentence;
+
+    // comparison table
+    const row = (key, label) => { const p = plans[key]; return `<tr class="${key === strategy ? 'chosen' : ''}"><td>${label}</td><td class="n">${p.done ? monthName(p.months) : 'Never'}</td><td class="n t-col">${p.done ? fmt.months(p.months) : '<span class="dim">—</span>'}</td><td class="n">${p.done ? m(p.totalInterest, 0) : '<span class="dim">—</span>'}</td></tr>`; };
+    $('#compare').innerHTML = row('avalanche', 'Avalanche') + row('snowball', 'Snowball') + row('minimum', 'Minimums only');
+
+    drawLanes(plan, names, debts);
+
+    // total balance chart: this plan vs minimums only
+    const months = Math.min(Math.max(plan.done ? plan.months : 0, minPlan.done ? minPlan.months : 0) || 360, 600);
+    const labels = ['Now'].concat(Array.from({ length: months }, (_, i) => monthName(i + 1)));
+    const start = debts.reduce((acc, d) => acc + d.balance, 0);
+    const series = [{ name: strategy === 'avalanche' ? 'Avalanche' : 'Snowball', values: [start].concat(Array.from({ length: months }, (_, i) => (i < plan.totals.length ? plan.totals[i] : (plan.done ? null : null)))) }];
+    series.push({ name: 'Minimums only', values: [start].concat(Array.from({ length: months }, (_, i) => (i < minPlan.totals.length ? minPlan.totals[i] : null))), colour: css('--chart-muted') });
+    Charts.line($('#ch-bal'), { labels, series, format: (v) => m(v, 0), tickFormat: (v) => compact(v), height: 200, legend: '#lg-bal' });
+  }
+
+  function compact(v) { return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(v); }
+
+  /* One lane per debt: grey while it only gets its minimum, the data hue once the extra is aimed at it. */
+  function drawLanes(plan, names, debts) {
+    const el = $('#lanes');
+    const draw = () => {
+      const NS = 'http://www.w3.org/2000/svg';
+      const W = Math.max(280, el.clientWidth), narrow = W < 520;
+      const rows = plan.debts.map((d, i) => ({ ...d, name: names[i], balance: debts[i].balance })).sort((x, y) => (x.payoff ?? 1e9) - (y.payoff ?? 1e9));
+      const labelW = narrow ? 0 : 150, endW = 84, pitch = narrow ? 52 : 40, top = 4, axisH = 24;
+      const H = top + rows.length * pitch + axisH;
+      const total = plan.done ? plan.months : DebtLogic.MAX_MONTHS;
+      const x0 = labelW, x1 = W - endW;
+      const x = (mo) => x0 + (Math.min(mo, total) / total) * (x1 - x0);
+      const data = css('--data'), grey = css('--chart-muted'), ink = css('--text'), muted = css('--muted'), grid = css('--grid');
+      let s = `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Payoff order: ${rows.map((r) => `${esc(r.name)} ${r.payoff ? 'paid off ' + monthName(r.payoff) : 'not paid off'}`).join('; ')}">`;
+      // year ticks
+      const firstYearMonth = 13 - (dateOf(1).getMonth() + 1) + 1; // month index that is a January
+      const span = total / 12, every = span > 20 ? 5 : span > 10 ? 2 : 1;
+      for (let mo = firstYearMonth; mo <= total; mo += 12) {
+        const yr = dateOf(mo).getFullYear();
+        if ((yr % every) !== 0 && every > 1) continue;
+        const xx = x(mo - 1);
+        s += `<line x1="${xx}" x2="${xx}" y1="${top}" y2="${H - axisH}" stroke="${grid}" stroke-width="1" shape-rendering="crispEdges"/>`;
+        s += `<text x="${Math.max(16, Math.min(W - endW, xx))}" y="${H - 6}" font-size="12" fill="${muted}" text-anchor="middle">${yr}</text>`;
+      }
+      rows.forEach((r, k) => {
+        const yMid = top + k * pitch + (narrow ? 34 : pitch / 2);
+        const f0 = r.focus.length ? r.focus[0] : null;
+        const end = r.payoff ?? total;
+        if (narrow) s += `<text x="0" y="${yMid - 14}" font-size="13" font-weight="500" fill="${ink}">${esc(r.name)}</text>`;
+        else {
+          s += `<text x="0" y="${yMid - 2}" font-size="13.5" font-weight="500" fill="${ink}">${esc(trunc(r.name, 18))}</text>`;
+          s += `<text x="0" y="${yMid + 14}" font-size="12" fill="${muted}">${m(r.balance, 0)}</text>`;
+        }
+        const bh = 14, by = yMid - bh / 2 + (narrow ? 0 : -4);
+        if (f0 === null || f0 > 1) s += `<rect x="${x(0)}" y="${by}" width="${Math.max(2, x(f0 === null ? end : f0 - 1) - x(0))}" height="${bh}" rx="3" fill="${grey}"><title>${esc(r.name)}: minimum payments ${f0 === null ? 'until paid off' : 'until ' + monthName(f0 - 1 || 1)}</title></rect>`;
+        if (f0 !== null) s += `<rect x="${x(f0 - 1)}" y="${by}" width="${Math.max(3, x(end) - x(f0 - 1))}" height="${bh}" rx="3" fill="${data}"><title>${esc(r.name)}: gets the extra from ${monthName(f0)} until ${r.payoff ? 'paid off ' + monthName(r.payoff) : 'the end'}</title></rect>`;
+        s += `<text x="${W}" y="${by + bh - 2}" font-size="12.5" fill="${r.payoff ? ink : muted}" text-anchor="end" style="font-family:var(--font-fig)">${r.payoff ? monthName(r.payoff) : 'Not paid'}</text>`;
+      });
+      s += '</svg>';
+      el.innerHTML = s;
+    };
+    el._draw = draw;
+    draw();
+    if (!el._obs && 'ResizeObserver' in window) { let w = el.clientWidth; el._obs = new ResizeObserver(() => { if (Math.abs(el.clientWidth - w) > 4) { w = el.clientWidth; el._draw(); } }); el._obs.observe(el); }
+    $('#lg-lanes').innerHTML = `<span><i style="background:${css('--chart-muted')}"></i>Minimum only</span><span><i style="background:${css('--data')}"></i>Getting the extra</span>`;
+  }
+  const trunc = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+
+  function blank(msg) {
+    $('#lead').innerHTML = '<span class="dim">—</span>';
+    $('#lead-note').textContent = msg;
+    ['#k-int', '#k-saved', '#k-paid'].forEach((s) => { $(s).innerHTML = '<span class="dim">—</span>'; });
+    $('#lanes').innerHTML = '<div class="empty">Your payoff order appears here.</div>';
+    $('#compare').innerHTML = '';
+    $('#ch-bal').innerHTML = '';
+    $('#lg-bal').innerHTML = '';
+    $('#budget').textContent = '—';
+  }
+
+  const saved = store.get('debt:state', null);
+  setRows(saved && Array.isArray(saved.list) && saved.list.length ? saved.list : EXAMPLE);
+  $("#example-note").hidden = !!saved;
+  if (saved) {
+    if (saved.extra != null) $('#extra').value = saved.extra;
+    if (saved.strategy) { const r = $(`input[name="strategy"][value="${saved.strategy}"]`); if (r) r.checked = true; }
+  }
+
+  $('#form').addEventListener('input', () => { $("#example-note").hidden = true; render(); save(); });
+  $('#form').addEventListener('change', () => { render(); save(); });
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#rows').addEventListener('click', (e) => { const b = e.target.closest('[data-remove]'); if (!b) return; b.closest('[data-row]').remove(); render(); save(); });
+  $('#add').addEventListener('click', () => { $('#rows').insertAdjacentHTML('beforeend', rowHTML({ name: '', balance: '', apr: '', min: '' })); const last = $$('[data-row]').at(-1); last.querySelector('[data-k="name"]').focus(); render(); });
+  $('#reset').addEventListener('click', () => { store.remove('debt:state'); setRows(EXAMPLE); $("#example-note").hidden = false; $('#extra').value = 250; $('#s-avalanche').checked = true; render(); CT.toast('Reset to the example debts'); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render);
+  render();
+})();
+</script>
+</body>
+</html>

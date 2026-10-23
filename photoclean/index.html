@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Photo Privacy Cleaner</title>
+<meta name="description" content="See the GPS location, date, camera and owner details hidden in a photo, and remove them without re-compressing the image. Runs entirely in your browser.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f2f2f2" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .drop { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: center; padding: 28px; border: 1.5px dashed var(--control); border-radius: var(--radius-card); background: var(--surface); transition: border-color var(--t-hover) ease, background-color var(--t-hover) ease; }
+  .drop.over { border-color: var(--data); background: var(--data-soft); }
+  .drop h2 { font-size: 18px; font-weight: 600; }
+  .drop p { color: var(--muted); margin-top: 4px; max-width: 60ch; }
+  .drop .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px var(--pad); border-radius: var(--radius-card); background: var(--surface); border: 1px solid var(--border); }
+  .summary b { font-weight: 600; }
+  .cards { display: grid; gap: var(--gap); }
+  .card { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 20px; padding: var(--pad); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+  .thumb { width: 168px; height: 126px; border-radius: 6px; object-fit: cover; background: var(--raised); }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .card-head h3 { font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .card-head .meta { font-family: var(--font-fig); }
+  .loc { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-control); background: var(--pill-negative-bg); color: var(--pill-negative-ink); display: grid; gap: 2px; }
+  .loc b { font-family: var(--font-fig); font-weight: 500; font-size: 18px; letter-spacing: -0.01em; }
+  .loc a { color: inherit; font-size: 13px; }
+  .reveals { margin-top: 12px; display: grid; }
+  .rev { display: grid; grid-template-columns: 12px minmax(130px, 200px) minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 7px 0; font-size: 14px; }
+  .rev + .rev { border-top: 1px solid var(--rule); }
+  .rev .lvl { width: 8px; height: 8px; border-radius: 50%; align-self: center; background: var(--chart-muted); }
+  .rev .lvl.high { background: var(--negative); }
+  .rev .lvl.medium { background: var(--warning); }
+  .rev .k { color: var(--muted); }
+  .rev .v { overflow-wrap: anywhere; }
+  .clean-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .result { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+  .result strong { color: var(--text); font-weight: 500; }
+  .none { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-control); background: var(--pill-positive-bg); color: var(--pill-positive-ink); font-size: 14px; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+  .fact { padding: var(--pad); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+  .fact h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .fact p { color: var(--muted); font-size: 14px; }
+  @media (max-width: 760px) {
+    .drop { grid-template-columns: minmax(0, 1fr); }
+    .card { grid-template-columns: minmax(0, 1fr); }
+    .thumb { width: 100%; height: 180px; }
+    .rev { grid-template-columns: 12px minmax(0, 1fr); }
+    .rev .v { grid-column: 2; }
+    .facts { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body data-tool="photoclean">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Privacy &amp; security</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Photo Privacy Cleaner</h1>
+      <p class="sub" id="finding">Photos can carry the exact place they were taken, the time, your phone's model and sometimes your name. See it, then remove it.</p>
+    </div>
+  </div>
+
+  <div class="stack">
+    <section class="drop" id="drop" aria-labelledby="h-drop">
+      <div>
+        <h2 id="h-drop">Drop photos here</h2>
+        <p>JPEG, PNG and WebP. Your photos are read on this device and never uploaded. Cleaning removes the hidden details without re-compressing, so the picture stays exactly the same.</p>
+      </div>
+      <div class="btns">
+        <label class="btn primary lg" for="file"><span id="choose-label"></span></label>
+        <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple hidden>
+        <button class="btn lg" type="button" id="sample">Try a sample</button>
+      </div>
+    </section>
+
+    <div class="summary" id="summary" hidden></div>
+    <div class="cards" id="cards"></div>
+
+    <div class="facts" id="facts">
+      <div class="fact"><h3>Location</h3><p>Phones with location turned on for the camera save GPS coordinates, often precise enough to find a home.</p></div>
+      <div class="fact"><h3>Time and device</h3><p>The date and second the photo was taken, the phone or camera model, and sometimes a serial number.</p></div>
+      <div class="fact"><h3>Who removes it</h3><p>Many social networks strip this when you post, but email, messaging attachments and file sharing often keep it.</p></div>
+    </div>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this works</h2>
+        <p>The file is read in your browser. Its metadata blocks are parsed: EXIF (including the GPS section), XMP, IPTC, comments, and text chunks in PNG files. Cleaning rebuilds the file without those blocks.</p>
+        <h3>Lossless</h3>
+        <p>The compressed image data is copied byte for byte. Nothing is decoded or re-compressed, so there is no loss of quality, and the cleaned file is usually a little smaller.</p>
+        <h3>What is kept</h3>
+        <ul>
+          <li><strong>Orientation.</strong> Phones save sideways photos with a "rotate me" flag. A tiny new EXIF block with only that flag is written, so the photo still shows the right way up.</li>
+          <li><strong>Colour profile.</strong> Kept so colours look the same. It describes the display colour space, not you.</li>
+          <li><strong>JPEG structure.</strong> The JFIF header and Adobe colour-transform marker, which decoders need.</li>
+        </ul>
+        <h3>What is removed</h3>
+        <ul>
+          <li>EXIF: GPS location, date and time, camera and lens, serial numbers, owner name, software, maker notes and the embedded thumbnail.</li>
+          <li>XMP and IPTC: editing history, captions, keywords, credits.</li>
+          <li>Comments, and in JPEGs any extra data after the image (some phones store a second image there, such as a depth map).</li>
+          <li>In PNG: tEXt, zTXt, iTXt, eXIf and tIME chunks. In WebP: EXIF and XMP chunks.</li>
+        </ul>
+        <h3>Limits</h3>
+        <p>HEIC photos from iPhones cannot be opened by most browsers. On iPhone, sharing a photo with Mail or Messages usually converts it to JPEG, and Settings › Camera › Formats › Most Compatible makes the camera save JPEGs. The pixels themselves can also give a place away: a street sign, a view, a house number.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.cipa.jp/std/documents/download_e.html?DC-008-Translation-2023-E" rel="noopener" target="_blank">CIPA DC-008: Exif 3.0 specification</a></li>
+          <li><a href="https://www.w3.org/TR/png-3/" rel="noopener" target="_blank">W3C: Portable Network Graphics (PNG) specification</a></li>
+          <li><a href="https://developers.google.com/speed/webp/docs/riff_container" rel="noopener" target="_blank">Google: WebP container specification</a></li>
+          <li><a href="https://www.w3.org/Graphics/JPEG/itu-t81.pdf" rel="noopener" target="_blank">ITU-T T.81: the JPEG standard</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script src="sample.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, icon, esc } = CT;
+  const PL = PhotoLogic;
+  $('#choose-label').outerHTML = icon('upload') + '<span>Choose photos</span>';
+  const items = [];
+  const kb = (n) => n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(2) + ' MB';
+  const extOf = (t) => ({ jpeg: 'jpg', png: 'png', webp: 'webp' }[t] || 'bin');
+  const MIME = { jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+  const REMOVED_NAMES = { exif: 'EXIF', xmp: 'XMP', 'xmp-ext': 'XMP', iptc: 'IPTC', comment: 'comments', trailing: 'trailing data', mpf: 'extra images', app0: 'app data', app1: 'app data', app2: 'app data', app: 'app data', icc: 'colour profile', tEXt: 'text', zTXt: 'text', iTXt: 'text', eXIf: 'EXIF', tIME: 'time', EXIF: 'EXIF', XMP: 'XMP' };
+
+  async function addFiles(files) {
+    for (const f of files) {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      items.push({ name: f.name || 'photo', size: buf.length, bytes: buf, url: URL.createObjectURL(f) });
+    }
+    render();
+  }
+
+  function analyse(it) {
+    if (it.info) return it.info;
+    const type = PL.detectType(it.bytes);
+    try { it.info = PL.inspect(it.bytes); } catch (e) { it.info = { type, error: e.message, found: [] }; }
+    return it.info;
+  }
+
+  function render() {
+    const cards = $('#cards');
+    $('#facts').hidden = items.length > 0;
+    cards.innerHTML = items.map((it, i) => {
+      const info = analyse(it);
+      const loc = info.found && info.found.find((f) => f.id === 'gps');
+      const rest = (info.found || []).filter((f) => f.id !== 'gps');
+      let body = '';
+      if (info.error) body = `<div class="notice neg" style="margin-top:12px">${icon('alert')}<p>${esc(info.error)} The file was left untouched.</p></div>`;
+      else if (info.unsupported) body = unsupported(info.type);
+      else {
+        if (loc) body += `<div class="loc"><span>Location where it was taken</span><b>${esc(loc.value)}</b><a href="https://www.openstreetmap.org/?mlat=${loc.loc.lat.toFixed(5)}&amp;mlon=${loc.loc.lon.toFixed(5)}#map=16/${loc.loc.lat.toFixed(5)}/${loc.loc.lon.toFixed(5)}" target="_blank" rel="noopener noreferrer">See it on OpenStreetMap (opens openstreetmap.org)</a></div>`;
+        if (rest.length) body += `<div class="reveals">${rest.map((f) => `<div class="rev"><span class="lvl ${f.level}" aria-label="${f.level} risk"></span><span class="k">${esc(f.label)}</span><span class="v">${esc(f.value)}</span></div>`).join('')}</div>`;
+        if (!loc && !rest.length) body += `<div class="none">No location, date, device or other personal details found in this file.</div>`;
+        body += `<div class="clean-row"><button class="btn primary" type="button" data-save="${i}">${icon('download')}<span>Save clean copy</span></button>${it.cleaned ? '' : ''}</div>`;
+        if (it.cleaned) {
+          const c = it.cleaned;
+          body += `<p class="result">Removed <strong>${[...new Set(c.removed.map((r) => REMOVED_NAMES[r] || r))].join(', ') || 'nothing'}</strong>. Kept the image data byte for byte${c.orientationKept ? ' and the orientation flag' : ''}. ${kb(it.size)} → <strong>${kb(c.bytes.length)}</strong>.</p>`;
+        }
+      }
+      return `<article class="card"><img class="thumb" src="${it.url}" alt="" loading="lazy"><div><div class="card-head"><h3>${esc(it.name)}</h3><span class="meta">${(info.type || '').toUpperCase()} · ${kb(it.size)}</span></div>${body}</div></article>`;
+    }).join('');
+
+    const n = items.length;
+    const withLoc = items.filter((it) => it.info && it.info.found && it.info.found.some((f) => f.id === 'gps')).length;
+    const cleanable = items.filter((it) => it.info && !it.info.unsupported && !it.info.error);
+    const s = $('#summary');
+    s.hidden = n < 1;
+    if (n) {
+      s.innerHTML = `<span><b>${n} photo${n === 1 ? '' : 's'}</b> · ${withLoc ? `<span class="down">${withLoc} reveal${withLoc === 1 ? 's' : ''} a location</span>` : 'no locations found'}</span><span class="btns" style="display:flex;gap:8px;flex-wrap:wrap">${cleanable.length > 1 ? `<button class="btn primary sm" type="button" id="zip">${icon('download')}<span>Save all clean (ZIP)</span></button>` : ''}<button class="btn sm ghost" type="button" id="clear">Clear</button></span>`;
+      $('#finding').innerHTML = withLoc ? `<strong>${withLoc} of ${n}</strong> photo${n === 1 ? '' : 's'} record${withLoc === 1 ? 's' : ''} exactly where ${withLoc === 1 ? 'it was' : 'they were'} taken. Save clean copies before you share them.` : `No GPS location in ${n === 1 ? 'this photo' : 'these photos'}. Other details are listed below each one.`;
+    }
+  }
+
+  function unsupported(type) {
+    if (type === 'heif') return `<div class="notice warn" style="margin-top:12px">${icon('alert')}<p>This is a HEIC/HEIF photo, which this browser cannot edit. On iPhone, sharing it through Mail or Messages usually converts it to JPEG, or set Settings › Camera › Formats › Most Compatible.</p></div>`;
+    if (type === 'gif') return `<div class="notice" style="margin-top:12px">${icon('info')}<p>GIF files do not use EXIF, so they rarely carry location data. This tool does not edit GIFs.</p></div>`;
+    return `<div class="notice warn" style="margin-top:12px">${icon('alert')}<p>This does not look like a JPEG, PNG or WebP image, so it was left untouched.</p></div>`;
+  }
+
+  function cleanItem(it) {
+    if (!it.cleaned) it.cleaned = PL.clean(it.bytes);
+    return it.cleaned;
+  }
+  const cleanName = (it) => it.name.replace(/\.[^.]+$/, '') + '-clean.' + extOf(it.info.type);
+
+  $('#cards').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-save]'); if (!b) return;
+    const it = items[Number(b.dataset.save)];
+    try { const c = cleanItem(it); render(); await CT.save(cleanName(it), new Blob([c.bytes], { type: MIME[it.info.type] })); }
+    catch (err) { CT.toast(err.message); }
+  });
+  $('#summary').addEventListener('click', async (e) => {
+    if (e.target.closest('#clear')) { items.forEach((it) => URL.revokeObjectURL(it.url)); items.length = 0; render(); $('#finding').textContent = 'Photos can carry the exact place they were taken, the time, your phone\'s model and sometimes your name. See it, then remove it.'; return; }
+    if (e.target.closest('#zip')) {
+      const files = [];
+      const used = new Set();
+      for (const it of items) {
+        if (!it.info || it.info.unsupported || it.info.error) continue;
+        try { const c = cleanItem(it); let n = cleanName(it), k = 2; while (used.has(n)) n = cleanName(it).replace(/(\.\w+)$/, `-${k++}$1`); used.add(n); files.push({ name: n, data: c.bytes }); } catch (err) { /* skip damaged */ }
+      }
+      render();
+      await CT.save('clean-photos.zip', new Blob([PL.zip(files)], { type: 'application/zip' }));
+    }
+  });
+  $('#file').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
+  $('#sample').addEventListener('click', () => {
+    const bin = atob(window.SAMPLE_JPEG); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    addFiles([new File([u], 'sample-photo.jpg', { type: 'image/jpeg' })]);
+  });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => { const f = [...(e.dataTransfer?.files || [])]; if (f.length) addFiles(f); });
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => e.preventDefault());
+})();
+</script>
+</body>
+</html>

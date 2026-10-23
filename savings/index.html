@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Savings Growth Calculator</title>
+<meta name="description" content="Compound interest with monthly deposits, any compounding frequency, inflation, and the monthly amount needed to reach a goal. Free and private.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#1423b8">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .years-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 12px; align-items: center; }
+  .goal-box { display: grid; gap: 6px; padding: 14px 16px; border-radius: var(--radius-control); background: var(--data-soft); }
+  .goal-box p { font-size: 14.5px; }
+  .goal-box strong { font-weight: 600; }
+  .goal-box .fig { font-weight: 500; }
+  .share-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; gap: 2px; margin-top: 16px; background: var(--raised); }
+  .share-bar span { display: block; height: 100%; transition: flex-grow var(--t-ui) var(--ease-out); }
+  .share-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 10px; font-size: 14px; }
+  .share-legend span { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .share-legend b { font-family: var(--font-fig); font-weight: 500; }
+  .share-legend .name { color: var(--muted); }
+</style>
+</head>
+<body data-tool="savings">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Money</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>Savings Growth Calculator</h1>
+      <p class="sub" id="finding">How regular deposits and compound interest add up over time.</p>
+    </div>
+    <div class="title-actions no-print">
+      <button class="btn" type="button" id="csv"></button>
+      <button class="btn ghost" type="button" id="reset">Reset</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-4 form" id="form" novalidate autocomplete="off">
+      <header><h2>Your plan</h2><span class="meta">Example figures</span></header>
+      <div class="field">
+        <label for="initial">Starting amount</label>
+        <div class="affix"><span>$</span><input class="input fig" id="initial" type="number" inputmode="decimal" min="0" step="any" value="5000"></div>
+      </div>
+      <div class="field">
+        <label for="monthly">Monthly deposit</label>
+        <div class="affix"><span>$</span><input class="input fig" id="monthly" type="number" inputmode="decimal" min="0" step="any" value="300"></div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="rate">Interest or return</label>
+          <div class="affix"><input class="input fig" id="rate" type="number" inputmode="decimal" min="-50" max="100" step="any" value="6"><span>% a year</span></div>
+        </div>
+        <div class="field">
+          <label for="compounding">Compounded</label>
+          <select class="input" id="compounding">
+            <option value="daily">Daily</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="annually">Yearly</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint" id="apy-hint" style="margin-top:-8px"></div>
+      <div class="field">
+        <label for="years">Years</label>
+        <div class="years-row">
+          <input type="range" id="years-range" min="1" max="50" step="1" value="20" aria-label="Years" data-no-persist>
+          <input class="input fig" id="years" type="number" inputmode="numeric" min="1" max="100" step="1" value="20">
+        </div>
+      </div>
+      <div class="field">
+        <span class="label" id="timing-label">Deposits go in at the</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="timing-label">
+          <label><input type="radio" name="timing" id="t-start" value="start">Start of month</label>
+          <label><input type="radio" name="timing" id="t-end" value="end" checked>End of month</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="increase">Raise deposit yearly</label>
+          <div class="affix"><input class="input fig" id="increase" type="number" inputmode="decimal" min="0" max="100" step="any" value="0"><span>%</span></div>
+        </div>
+        <div class="field">
+          <label for="inflation">Inflation</label>
+          <div class="affix"><input class="input fig" id="inflation" type="number" inputmode="decimal" min="0" max="50" step="any" value="2.5"><span>%</span></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="goal">Goal (optional)</label>
+        <div class="affix"><span>$</span><input class="input fig" id="goal" type="number" inputmode="decimal" min="0" step="any" value="150000"></div>
+      </div>
+    </form>
+
+    <div class="span-8 stack">
+      <section class="panel" aria-labelledby="lead-label">
+        <div class="lead">
+          <span class="lead-label" id="lead-label">Balance after 20 years</span>
+          <span class="lead-value" id="lead">—</span>
+          <span class="lead-note" id="lead-note"></span>
+        </div>
+        <div class="share-bar" id="share-bar" aria-hidden="true"></div>
+        <div class="share-legend" id="share-legend"></div>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-label">You put in</div><div class="kpi-value" id="k-dep">—</div></div>
+          <div class="kpi"><div class="kpi-label">Interest earned</div><div class="kpi-value data" id="k-int">—</div></div>
+          <div class="kpi"><div class="kpi-label">In today's money</div><div class="kpi-value" id="k-real">—</div></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-growth">
+        <header><h2 id="h-growth">Deposits and interest, year by year</h2><div id="lg-growth"></div></header>
+        <div class="chart" id="ch-growth"></div>
+      </section>
+
+      <section class="panel" id="goal-panel" aria-labelledby="h-goal">
+        <header><h2 id="h-goal">Your goal</h2><span class="meta" id="goal-meta"></span></header>
+        <div class="goal-box" id="goal-box"></div>
+      </section>
+    </div>
+
+    <section class="panel flush span-12" aria-labelledby="h-table">
+      <header style="padding:var(--pad) var(--pad) 0;margin-bottom:8px"><h2 id="h-table">Year by year</h2><span class="meta">Balances at the end of each year</span></header>
+      <div class="table-wrap tall">
+        <table><thead><tr><th>Year</th><th class="n">Deposits</th><th class="n">Interest</th><th class="n">Balance</th><th class="n">In today's money</th></tr></thead><tbody id="tbody"></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this is calculated</h2>
+        <p>The plan is worked out month by month. Interest builds up every month and is credited, so it starts earning interest of its own, as often as the compounding setting says. This is how savings accounts and certificates of deposit work.</p>
+        <div class="formula">Daily:      each month × (1 + r/365)^(365/12)
+Monthly:    each month × (1 + r/12)
+Quarterly,
+Yearly:     balance × r/12 builds up each month,
+            credited every 3 or 12 months</div>
+        <p>With no deposits this gives the textbook result P × (1 + r/n)^(n·t). A deposit made partway through a quarter or year earns simple interest until the next credit date.</p>
+        <h3>Goal</h3>
+        <p>The final balance grows in a straight line with the monthly deposit, so the deposit needed for a goal is exact: (goal − what the starting amount alone becomes) ÷ (what $1 a month becomes).</p>
+        <h3>Inflation</h3>
+        <p>"In today's money" divides each balance by (1 + inflation)^years, so you can compare it with prices now.</p>
+        <h3>Keep in mind</h3>
+        <p>Investment returns are not steady: a fund that averages 6% may lose money in some years. Taxes and fees are not included.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator" rel="noopener" target="_blank">Investor.gov (US SEC): Compound interest calculator</a></li>
+          <li><a href="https://www.consumerfinance.gov/rules-policy/regulations/1030/" rel="noopener" target="_blank">Regulation DD (Truth in Savings), 12 CFR 1030: how banks disclose APY</a></li>
+          <li><a href="https://en.wikipedia.org/wiki/Compound_interest" rel="noopener" target="_blank">Compound interest: formulas and derivations</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="../assets/common.js"></script>
+<script src="../assets/charts.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, num, fmt, persist, invalid, icon, save, csv } = CT;
+  const form = $('#form');
+  const m = (v, d) => fmt.money(v, 'USD', d == null ? 0 : d);
+  const css = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+  $('#csv').innerHTML = icon('download') + '<span>Download CSV</span>';
+  const DEFAULTS = {};
+  $$('input, select', form).forEach((el) => { DEFAULTS[el.id] = el.type === 'radio' ? el.checked : el.value; });
+  const memory = persist(form, 'savings');
+  $('#years-range').value = Math.min(50, Math.max(1, num($('#years')) || 20));
+  const thisYear = new Date().getFullYear();
+  let last = null;
+
+  function read() {
+    let ok = true;
+    const get = (id, test, msg) => { const el = $('#' + id); const x = num(el); const bad = !test(x); invalid(el, bad ? msg : ''); if (bad) ok = false; return x; };
+    const o = {
+      initial: get('initial', (x) => x >= 0, 'Enter 0 or more.'),
+      monthly: get('monthly', (x) => x >= 0, 'Enter 0 or more.'),
+      rate: get('rate', (x) => x > -50 && x <= 100, 'Enter a rate from −50 to 100.'),
+      compounding: $('#compounding').value,
+      years: get('years', (x) => Number.isInteger(x) && x >= 1 && x <= 100, 'Whole years, 1 to 100.'),
+      timing: $('input[name="timing"]:checked').value,
+      increase: get('increase', (x) => x >= 0 && x <= 100, '0 to 100.'),
+    };
+    const infl = get('inflation', (x) => x >= 0 && x <= 50, '0 to 50.');
+    const goalEl = $('#goal');
+    const goal = goalEl.value === '' ? null : get('goal', (x) => x > 0, 'Enter a goal above 0, or leave it empty.');
+    if (goalEl.value === '') invalid(goalEl, '');
+    return ok ? { o, infl, goal } : null;
+  }
+
+  function render() {
+    const inp = read();
+    if (!inp) { blank(); return; }
+    const { o, infl, goal } = inp;
+    const p = SavingsLogic.project(o);
+    last = { inp, p };
+    const realEnd = SavingsLogic.real(p.balance, infl, o.years);
+    $('#apy-hint').textContent = `That is an annual yield (APY) of ${fmt.num(SavingsLogic.apy(o.rate, o.compounding) * 100, 3)}%.`;
+    $('#lead-label').textContent = `Balance after ${o.years} ${o.years === 1 ? 'year' : 'years'}`;
+    $('#lead').textContent = m(p.balance);
+    $('#lead-note').innerHTML = infl > 0 ? `About <strong>${m(realEnd)}</strong> in today's money, if prices rise ${fmt.smart(infl, 2)}% a year.` : 'No inflation adjustment.';
+    const share = p.balance > 0 ? p.interest / p.balance : 0;
+    $('#k-dep').textContent = m(p.deposits);
+    $('#k-int').innerHTML = `${m(p.interest)}<small>${fmt.num(share * 100, 0)}% of the balance</small>`;
+    $('#k-real').textContent = infl > 0 ? m(realEnd) : m(p.balance);
+    const dataC = css('--data'), muted = css('--chart-muted');
+    const dep = Math.max(0, p.deposits), int = Math.max(0, p.interest);
+    $('#share-bar').innerHTML = `<span style="flex-grow:${dep};background:${muted}"></span><span style="flex-grow:${int};background:${dataC}"></span>`;
+    $('#share-legend').innerHTML = `<span><i class="swatch-dot" style="background:${muted}"></i><span class="name">Your deposits</span><b>${m(p.deposits)}</b></span><span><i class="swatch-dot" style="background:${dataC}"></i><span class="name">Interest</span><b>${m(p.interest)}</b></span>`;
+
+    // finding
+    const crossRow = p.rows.find((r) => r.totalInterest > r.totalDeposits);
+    let sentence = `Putting in ${m(o.monthly)} a month${o.initial ? ` on top of ${m(o.initial)}` : ''} at ${fmt.smart(o.rate, 3)}% grows to <strong>${m(p.balance)}</strong> in ${o.years} years`;
+    sentence += p.interest > 0 ? `, and <strong>${fmt.num(share * 100, 0)}%</strong> of it is interest.` : '.';
+    if (crossRow && crossRow.year > 1) sentence += ` From year ${crossRow.year}, interest outweighs everything you deposited.`;
+    $('#finding').innerHTML = sentence;
+
+    // chart
+    const ann = crossRow && crossRow.year > 1 && crossRow.year < o.years ? [{ at: crossRow.year - 1, label: 'Interest passes deposits', short: 'Interest > deposits' }] : [];
+    Charts.stacked($('#ch-growth'), {
+      labels: p.rows.map((r) => String(thisYear + r.year)),
+      series: [
+        { name: 'Deposits', values: p.rows.map((r) => r.totalDeposits), colour: muted },
+        { name: 'Interest', values: p.rows.map((r) => Math.max(0, r.totalInterest)), colour: dataC },
+      ],
+      format: (v) => m(v), tickFormat: compact, height: 240, annotations: ann, legend: '#lg-growth',
+      reference: goal ? { value: goal, label: 'Goal ' + compact(goal) } : undefined,
+    });
+
+    // goal
+    const gp = $('#goal-panel');
+    gp.hidden = !goal;
+    if (goal) {
+      const k = SavingsLogic.monthsToGoal(o, goal);
+      const need = SavingsLogic.depositForGoal(o, goal);
+      const when = (mo) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + mo); return new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(d); };
+      $('#goal-meta').textContent = m(goal);
+      let html = '';
+      if (k === 0) html = `<p>Your starting amount already covers the goal.</p>`;
+      else if (k !== null) html = `<p>At ${m(o.monthly)} a month you reach <strong class="fig">${m(goal)}</strong> in <strong>${fmt.months(k)}</strong>, around ${when(k)}.</p>`;
+      else html = `<p>At ${m(o.monthly)} a month you would not reach ${m(goal)} within 100 years.</p>`;
+      if (k !== 0) html += need === 0 ? `<p>You reach it within ${o.years} years even without deposits.</p>` : `<p>To reach it in ${o.years} years, deposit <strong class="fig">${fmt.money(need, 'USD', 2)}</strong> a month${o.increase ? `, rising ${fmt.smart(o.increase, 2)}% a year` : ''}.</p>`;
+      $('#goal-box').innerHTML = html;
+    }
+
+    // table
+    $('#tbody').innerHTML = p.rows.map((r) => `<tr><td>${thisYear + r.year}<span class="sub">Year ${r.year}</span></td><td class="n">${m(r.deposits + (r.year === 1 ? o.initial : 0))}</td><td class="n">${m(r.interest)}</td><td class="n">${m(r.balance)}</td><td class="n">${m(SavingsLogic.real(r.balance, infl, r.month / 12))}</td></tr>`).join('');
+  }
+
+  function compact(v) { return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(v); }
+  function blank() {
+    last = null;
+    ['#lead', '#k-dep', '#k-int', '#k-real'].forEach((s) => { $(s).innerHTML = '<span class="dim">—</span>'; });
+    $('#lead-note').textContent = 'Fix the highlighted fields to see your projection.';
+    $('#share-bar').innerHTML = ''; $('#share-legend').innerHTML = '';
+  }
+
+  form.addEventListener('input', (e) => {
+    if (e.target.id === 'years-range') $('#years').value = e.target.value;
+    if (e.target.id === 'years') { const v = num(e.target); if (v >= 1) $('#years-range').value = Math.min(50, v); }
+    render();
+  });
+  form.addEventListener('change', render);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  $('#reset').addEventListener('click', () => { memory.clear(); $$('input, select', form).forEach((el) => { if (!(el.id in DEFAULTS)) return; if (el.type === 'radio') el.checked = DEFAULTS[el.id]; else el.value = DEFAULTS[el.id]; }); $('#years-range').value = 20; render(); CT.toast('Reset to the example'); });
+  $('#csv').addEventListener('click', () => {
+    if (!last) { CT.toast('Fix the highlighted fields first'); return; }
+    const { inp, p } = last;
+    const rows = [['Year', 'Deposits', 'Interest', 'Balance', "In today's money"]].concat(p.rows.map((r) => [thisYear + r.year, (r.deposits + (r.year === 1 ? inp.o.initial : 0)).toFixed(2), r.interest.toFixed(2), r.balance.toFixed(2), SavingsLogic.real(r.balance, inp.infl, r.month / 12).toFixed(2)]));
+    save('savings-projection.csv', csv(rows), 'text/csv');
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render);
+  render();
+})();
+</script>
+</body>
+</html>

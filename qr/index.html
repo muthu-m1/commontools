@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR Code Maker</title>
+<meta name="description" content="Make QR codes for links, Wi-Fi networks, contact cards, email, text messages and phone numbers. Each code is decoded back to check it scans. Free, private, no tracking.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#f7dd47">
+<meta name="apple-mobile-web-app-title" content="Common Tools">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@300..900&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+  .types { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 8px; background: var(--raised); }
+  .types button { height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; cursor: pointer; }
+  .types button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); }
+  .stage { display: grid; place-items: center; padding: 28px; border-radius: var(--radius-card); background: var(--raised); }
+  .stage .code { width: min(100%, 340px); aspect-ratio: 1; max-width: 100%; border-radius: 6px; box-shadow: 0 0 0 1px var(--border); }
+  .stage .code svg { width: 100%; height: 100%; display: block; border-radius: 6px; }
+  .verify { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: 14px; min-height: 24px; }
+  .verify svg { width: 16px; height: 16px; }
+  .verify.ok { color: var(--positive); }
+  .verify.bad { color: var(--negative); }
+  .verify.wait { color: var(--muted); }
+  .payload { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-control); background: var(--raised); font-family: var(--font-fig); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 140px; overflow: auto; color: var(--muted); }
+  .cap { margin-top: 14px; }
+  .cap-track { height: 6px; border-radius: 999px; background: var(--raised); overflow: hidden; margin-top: 6px; }
+  .cap-fill { height: 100%; background: var(--data); border-radius: 999px; transition: width var(--t-ui) var(--ease-out); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .colors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .colors .row2 { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; }
+  .pw-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+</style>
+</head>
+<body data-tool="qr">
+<header class="topbar">
+  <div class="col topbar-in">
+    <a class="logo" href="../index.html"><svg class="logo-mark" viewBox="0 0 22 22" aria-hidden="true"><rect class="m-ink" width="10" height="10" rx="2"/><rect class="m-ink" x="12" width="10" height="10" rx="2"/><rect class="m-ink" y="12" width="10" height="10" rx="2"/><circle class="m-data" cx="17" cy="17" r="5"/></svg>Common Tools</a>
+    <span class="crumb">Everyday</span>
+    <div class="top-right">
+      <span class="private" title="Nothing you enter leaves this device"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span class="private-text">Runs on your device</span></span>
+      <button class="btn sm" type="button" data-menu aria-expanded="false">All tools</button>
+    </div>
+  </div>
+</header>
+
+<main class="col">
+  <div class="title-row">
+    <div>
+      <h1>QR Code Maker</h1>
+      <p class="sub" id="finding">A QR code for a link, a Wi-Fi network, a contact card and more. No tracking redirects: the code holds your content directly.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <form class="panel span-6 form" id="form" novalidate autocomplete="off">
+      <div class="types" role="group" aria-label="What the code holds" id="types">
+        <button type="button" data-type="link" aria-pressed="true">Link</button>
+        <button type="button" data-type="wifi" aria-pressed="false">Wi-Fi</button>
+        <button type="button" data-type="contact" aria-pressed="false">Contact</button>
+        <button type="button" data-type="text" aria-pressed="false">Text</button>
+        <button type="button" data-type="email" aria-pressed="false">Email</button>
+        <button type="button" data-type="sms" aria-pressed="false">Text message</button>
+        <button type="button" data-type="phone" aria-pressed="false">Phone</button>
+      </div>
+
+      <div class="form" data-for="link">
+        <div class="field"><label for="url">Web address</label><input class="input" id="url" type="url" inputmode="url" value="https://en.wikipedia.org/wiki/QR_code" spellcheck="false"><div class="hint">Scanning opens this page. It never expires, because the address is inside the code.</div></div>
+      </div>
+      <div class="form" data-for="wifi" hidden>
+        <div class="field"><label for="ssid">Network name (SSID)</label><input class="input" id="ssid" value="" placeholder="HomeNetwork" spellcheck="false"></div>
+        <div class="field"><label for="wpass">Password</label><div class="pw-row"><input class="input" id="wpass" type="password" value="" spellcheck="false" autocomplete="off"><button class="btn" type="button" id="show-pw">Show</button></div></div>
+        <div class="form-row">
+          <div class="field"><label for="sec">Security</label><select class="input" id="sec"><option value="WPA">WPA, WPA2 or WPA3</option><option value="WEP">WEP (old)</option><option value="nopass">No password</option></select></div>
+          <div class="field" style="align-content:end"><label class="check"><input type="checkbox" id="hidden-net"><span>Hidden network</span></label></div>
+        </div>
+        <div class="hint">Guests point their camera at the code to join. The password is stored in the code as plain text, so print it only where you would write the password itself.</div>
+      </div>
+      <div class="form" data-for="contact" hidden>
+        <div class="form-row"><div class="field"><label for="c-first">First name</label><input class="input" id="c-first"></div><div class="field"><label for="c-last">Last name</label><input class="input" id="c-last"></div></div>
+        <div class="form-row"><div class="field"><label for="c-org">Organisation</label><input class="input" id="c-org"></div><div class="field"><label for="c-title">Job title</label><input class="input" id="c-title"></div></div>
+        <div class="form-row"><div class="field"><label for="c-phone">Phone</label><input class="input" id="c-phone" type="tel"></div><div class="field"><label for="c-email">Email</label><input class="input" id="c-email" type="email"></div></div>
+        <div class="field"><label for="c-url">Website</label><input class="input" id="c-url" type="url" spellcheck="false"></div>
+      </div>
+      <div class="form" data-for="text" hidden>
+        <div class="field"><label for="txt">Text</label><textarea class="input" id="txt" rows="4"></textarea></div>
+      </div>
+      <div class="form" data-for="email" hidden>
+        <div class="field"><label for="e-to">To</label><input class="input" id="e-to" type="email" spellcheck="false"></div>
+        <div class="field"><label for="e-sub">Subject</label><input class="input" id="e-sub"></div>
+        <div class="field"><label for="e-body">Message</label><textarea class="input" id="e-body" rows="3"></textarea></div>
+      </div>
+      <div class="form" data-for="sms" hidden>
+        <div class="field"><label for="s-num">Phone number</label><input class="input" id="s-num" type="tel" placeholder="+1 555 010 0199"></div>
+        <div class="field"><label for="s-msg">Message</label><textarea class="input" id="s-msg" rows="3"></textarea></div>
+      </div>
+      <div class="form" data-for="phone" hidden>
+        <div class="field"><label for="p-num">Phone number</label><input class="input" id="p-num" type="tel" placeholder="+1 555 010 0199"><div class="hint">Include the country code if people abroad will scan it.</div></div>
+      </div>
+
+      <div class="form" style="border-top:1px solid var(--rule);padding-top:16px">
+        <div class="field">
+          <label for="ecl">Error correction</label>
+          <select class="input" id="ecl">
+            <option value="L">Low: survives about 7% damage, smallest code</option>
+            <option value="M" selected>Medium: about 15%, good for screens and paper</option>
+            <option value="Q">Quartile: about 25%</option>
+            <option value="H">High: about 30%, for rough surfaces or a logo on top</option>
+          </select>
+        </div>
+        <div class="colors">
+          <div class="field"><label for="dark">Code colour</label><div class="row2"><input type="color" id="dark" value="#0b0d10" aria-label="Code colour"><input class="input fig" id="dark-hex" value="#0B0D10" aria-label="Code colour hex"></div></div>
+          <div class="field"><label for="light">Background</label><div class="row2"><input type="color" id="light" value="#ffffff" aria-label="Background colour"><input class="input fig" id="light-hex" value="#FFFFFF" aria-label="Background colour hex"></div></div>
+        </div>
+        <div class="field">
+          <label for="size">PNG size</label>
+          <select class="input" id="size"><option value="512">About 512 px, for screens</option><option value="1024" selected>About 1024 px, for print up to 10 cm</option><option value="2048">About 2048 px, for posters</option></select>
+        </div>
+      </div>
+      <div class="err" id="err" hidden></div>
+    </form>
+
+    <section class="panel span-6" aria-labelledby="h-code">
+      <header><h2 id="h-code">Your code</h2><span class="meta" id="code-meta"></span></header>
+      <div class="stage"><div class="code" id="code" role="img" aria-label="QR code"></div></div>
+      <div class="verify wait" id="verify"></div>
+      <div class="cap"><div class="meta" id="cap-text"></div><div class="cap-track"><div class="cap-fill" id="cap-fill" style="width:0"></div></div></div>
+      <div class="actions">
+        <button class="btn primary" type="button" id="png"></button>
+        <button class="btn" type="button" id="svg"></button>
+        <button class="btn ghost" type="button" id="copy"></button>
+      </div>
+      <div class="payload" id="payload" aria-label="Exact content of the code"></div>
+    </section>
+  </div>
+
+  <section class="method" aria-labelledby="h-method">
+    <div class="method-grid">
+      <div class="method-main">
+        <h2 id="h-method">How this works</h2>
+        <p>Your content is written into the code directly, in byte mode with UTF-8 text, and the smallest QR version that fits is chosen. Many free QR sites instead put their own short link in the code and redirect it, which lets them count your scans or switch the code off later. These codes have no middleman.</p>
+        <h3>Formats phone cameras understand</h3>
+        <ul>
+          <li><strong>Wi-Fi:</strong> <span class="mono">WIFI:T:WPA;S:name;P:password;;</span> with backslashes before \ ; , : and ".</li>
+          <li><strong>Contact:</strong> a vCard 3.0 card.</li>
+          <li><strong>Email:</strong> a <span class="mono">mailto:</span> link with the subject and message encoded.</li>
+          <li><strong>Text message:</strong> <span class="mono">SMSTO:number:message</span>. <strong>Phone:</strong> <span class="mono">tel:number</span>.</li>
+        </ul>
+        <h3>Checked before you use it</h3>
+        <p>After drawing the code, the page decodes it again with a separate decoder (jsQR) and compares the result with your content byte for byte. A code that does not decode, for example because the colours are too close, is flagged.</p>
+        <h3>Printing tips</h3>
+        <p>Keep the white border (the "quiet zone", four modules wide). Dark code on a light background scans most reliably. As a rule of thumb, print a code at least 2 cm wide for scanning from close up, and larger for posters seen from a distance.</p>
+      </div>
+      <aside class="method-side">
+        <h2>Sources</h2>
+        <ul class="sources">
+          <li><a href="https://www.iso.org/standard/83389.html" rel="noopener" target="_blank">ISO/IEC 18004: QR Code bar code symbology</a></li>
+          <li><a href="https://github.com/zxing/zxing/wiki/Barcode-Contents" rel="noopener" target="_blank">ZXing: barcode contents (Wi-Fi, SMS and other formats)</a></li>
+          <li><a href="https://www.rfc-editor.org/info/rfc2426/" rel="noopener" target="_blank">RFC 2426: vCard 3.0</a></li>
+          <li><a href="https://www.rfc-editor.org/info/rfc6068/" rel="noopener" target="_blank">RFC 6068: the mailto URI scheme</a></li>
+          <li><a href="https://github.com/kazuhikoarase/qrcode-generator" rel="noopener" target="_blank">qrcode-generator, the encoder used here (MIT licence)</a></li>
+          <li><a href="https://github.com/cozmo/jsQR" rel="noopener" target="_blank">jsQR, the decoder used for the check (Apache 2.0)</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="col foot-in">
+    <p>Common Tools. Free, private, no sign-up. Everything runs in your browser and nothing you type is sent anywhere.</p>
+    <p><a href="../index.html">All tools</a></p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="../assets/common.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const { $, $$, store, icon, esc, invalid } = CT;
+  const Q = QRLogic;
+  $('#png').innerHTML = icon('download') + '<span>Save PNG</span>';
+  $('#svg').innerHTML = icon('download') + '<span>Save SVG</span>';
+  $('#copy').innerHTML = icon('copy') + '<span>Copy content</span>';
+  if (typeof qrcode === 'undefined') {
+    $('#code').innerHTML = '';
+    $('#verify').className = 'verify bad';
+    $('#verify').textContent = 'The QR encoder could not load. Check your internet connection and reload.';
+    return;
+  }
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+
+  let type = 'link';
+  const prefs = store.get('qr:style', null);
+  if (prefs) ['ecl', 'dark', 'light', 'size'].forEach((k) => { if (prefs[k]) $('#' + k).value = prefs[k]; });
+  $('#dark-hex').value = $('#dark').value.toUpperCase(); $('#light-hex').value = $('#light').value.toUpperCase();
+
+  function payload() {
+    const v = (id) => $('#' + id).value;
+    switch (type) {
+      case 'link': return Q.link({ url: v('url') });
+      case 'wifi': return Q.wifi({ ssid: v('ssid'), password: v('wpass'), security: v('sec'), hidden: $('#hidden-net').checked });
+      case 'contact': return Q.vcard({ first: v('c-first'), last: v('c-last'), org: v('c-org'), title: v('c-title'), phone: v('c-phone'), email: v('c-email'), url: v('c-url') });
+      case 'text': return Q.text({ text: v('txt') });
+      case 'email': return Q.email({ to: v('e-to'), subject: v('e-sub'), body: v('e-body') });
+      case 'sms': return Q.sms({ number: v('s-num'), message: v('s-msg') });
+      case 'phone': return Q.phone({ number: v('p-num') });
+    }
+    return '';
+  }
+
+  const lum = (hex) => { const n = parseInt(hex.slice(1), 16); const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }); return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]; };
+  let last = null, verifyToken = 0;
+
+  function render() {
+    const err = $('#err');
+    err.hidden = true;
+    let text;
+    try { text = payload(); } catch (e) { err.hidden = false; err.textContent = e.message; show(null); return; }
+    const ecl = $('#ecl').value, dark = $('#dark').value, light = $('#light').value;
+    store.set('qr:style', { ecl, dark, light, size: $('#size').value });
+    const bytes = Q.byteLength(text);
+    let qr;
+    try { qr = qrcode(0, ecl); qr.addData(text, 'Byte'); qr.make(); }
+    catch (e) { err.hidden = false; err.textContent = `Too much for one QR code: ${bytes.toLocaleString()} bytes, and the limit at this error-correction level is ${Q.MAX_BYTES[ecl].toLocaleString()}. Shorten it or choose a lower level.`; show(null); return; }
+    const n = qr.getModuleCount();
+    last = { qr, n, text, dark, light, ecl };
+    show(last);
+    const version = (n - 17) / 4;
+    $('#code-meta').textContent = `Version ${version} · ${n} × ${n} modules`;
+    $('#cap-text').textContent = `${bytes.toLocaleString()} of ${Q.MAX_BYTES[ecl].toLocaleString()} bytes at level ${ecl}`;
+    $('#cap-fill').style.width = Math.max(1, (bytes / Q.MAX_BYTES[ecl]) * 100) + '%';
+    $('#payload').textContent = text;
+    const what = { link: 'opens ' + text, wifi: 'joins the Wi-Fi network "' + $('#ssid').value + '"', contact: 'adds a contact card', text: 'shows your text', email: 'starts an email to ' + $('#e-to').value.trim(), sms: 'starts a text message', phone: 'calls ' + text.slice(4) };
+    $('#finding').innerHTML = `Scanning this code ${esc(what[type])}. It is a version ${version} code, ${n} modules wide, with ${ecl === 'L' ? 'low' : ecl === 'M' ? 'medium' : ecl === 'Q' ? 'quartile' : 'high'} error correction.`;
+    // colour warnings, then the decode check
+    const ld = lum(dark), ll = lum(light);
+    const v = $('#verify');
+    if (ld >= ll) { v.className = 'verify bad'; v.innerHTML = icon('alert') + '<span>The code is lighter than its background. Many scanners cannot read inverted codes.</span>'; }
+    else if ((ll + 0.05) / (ld + 0.05) < 3) { v.className = 'verify bad'; v.innerHTML = icon('alert') + '<span>The colours are too close. Use more contrast so cameras can read it.</span>'; }
+    else verify(++verifyToken);
+  }
+
+  function svgString(c, forDownload) {
+    const { qr, n, dark, light } = c, size = n + 8;
+    let d = '';
+    for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (qr.isDark(r, col)) d += `M${col + 4} ${r + 4}h1v1h-1z`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"${forDownload ? ` width="${size * 10}" height="${size * 10}"` : ''} shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="${light}"/><path d="${d}" fill="${dark}"/></svg>`;
+  }
+  function canvasFor(c, scale) {
+    const { qr, n, dark, light } = c, size = (n + 8) * scale;
+    const cv = document.createElement('canvas'); cv.width = cv.height = size;
+    const g = cv.getContext('2d'); g.fillStyle = light; g.fillRect(0, 0, size, size); g.fillStyle = dark;
+    for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (qr.isDark(r, col)) g.fillRect((col + 4) * scale, (r + 4) * scale, scale, scale);
+    return cv;
+  }
+  function show(c) {
+    $('#code').innerHTML = c ? svgString(c, false) : '';
+    ['png', 'svg', 'copy'].forEach((id) => { $('#' + id).disabled = !c; });
+    if (!c) { $('#verify').className = 'verify wait'; $('#verify').textContent = ''; $('#payload').textContent = ''; $('#code-meta').textContent = ''; $('#cap-text').textContent = ''; $('#cap-fill').style.width = '0'; }
+  }
+
+  /* Decode our own code with jsQR (loaded on first use) and compare bytes. */
+  let jsqrPromise = null;
+  function loadJsQR() {
+    if (window.jsQR) return Promise.resolve(window.jsQR);
+    if (!jsqrPromise) jsqrPromise = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; s.onload = () => res(window.jsQR); s.onerror = () => rej(new Error('jsQR failed to load')); document.head.appendChild(s); });
+    return jsqrPromise;
+  }
+  async function verify(token) {
+    const v = $('#verify');
+    v.className = 'verify wait'; v.textContent = 'Checking that it scans…';
+    let decode;
+    try { decode = await loadJsQR(); } catch (e) { v.className = 'verify wait'; v.textContent = 'Scan check unavailable offline.'; return; }
+    if (token !== verifyToken || !last) return;
+    const cv = canvasFor(last, 6);
+    const img = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
+    const res = decode(img.data, cv.width, cv.height, { inversionAttempts: 'dontInvert' });
+    const got = res ? new TextDecoder('utf-8').decode(new Uint8Array(res.binaryData)) : null;
+    if (got === last.text) { v.className = 'verify ok'; v.innerHTML = icon('check') + '<span>Checked: it scans back to exactly your content.</span>'; }
+    else { v.className = 'verify bad'; v.innerHTML = icon('alert') + '<span>This code did not decode cleanly. Try more contrast or a higher error-correction level.</span>'; }
+  }
+
+  $('#types').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-type]'); if (!b) return;
+    type = b.dataset.type;
+    $$('#types button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    $$('[data-for]').forEach((f) => { f.hidden = f.dataset.for !== type; });
+    render();
+  });
+  $('#form').addEventListener('input', (e) => {
+    if (e.target.id === 'dark' || e.target.id === 'light') $('#' + e.target.id + '-hex').value = e.target.value.toUpperCase();
+    if (e.target.id === 'dark-hex' || e.target.id === 'light-hex') { const t = e.target.value.trim(); if (/^#[0-9a-f]{6}$/i.test(t)) $('#' + e.target.id.replace('-hex', '')).value = t.toLowerCase(); }
+    render();
+  });
+  $('#form').addEventListener('change', render);
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+  $('#show-pw').addEventListener('click', () => { const p = $('#wpass'); const showIt = p.type === 'password'; p.type = showIt ? 'text' : 'password'; $('#show-pw').textContent = showIt ? 'Hide' : 'Show'; });
+  $('#png').addEventListener('click', () => {
+    if (!last) return;
+    const target = Number($('#size').value), scale = Math.max(1, Math.round(target / (last.n + 8)));
+    canvasFor(last, scale).toBlob((blob) => CT.save('qr-code.png', blob, 'image/png'), 'image/png');
+  });
+  $('#svg').addEventListener('click', () => { if (last) CT.save('qr-code.svg', svgString(last, true), 'image/svg+xml'); });
+  $('#copy').addEventListener('click', () => { if (last) CT.copy(last.text); });
+  render();
+})();
+</script>
+</body>
+</html>
