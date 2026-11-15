@@ -25,6 +25,7 @@
       "main.js",
       "preload.js",
       "appbar.js",
+      "logic.js",
       "renderer/**",
       "assets/**",
       "package.json"
@@ -39,7 +40,10 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false
-    }
+    },
+    "asarUnpack": [
+      "node_modules/koffi/**"
+    ]
   },
   "author": "lumabar contributors"
 }
