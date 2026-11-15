@@ -21,11 +21,25 @@
   "build": {
     "appId": "app.lumabar.dock",
     "productName": "lumabar",
-    "files": ["main.js", "preload.js", "appbar.js", "renderer/**", "assets/**", "package.json"],
+    "files": [
+      "main.js",
+      "preload.js",
+      "appbar.js",
+      "renderer/**",
+      "assets/**",
+      "package.json"
+    ],
     "win": {
       "icon": "assets/icon.png",
-      "target": ["nsis", "portable"]
+      "target": [
+        "nsis",
+        "portable"
+      ]
     },
-    "nsis": { "oneClick": true, "perMachine": false }
-  }
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  },
+  "author": "lumabar contributors"
 }

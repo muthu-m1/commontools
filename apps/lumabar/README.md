@@ -46,3 +46,9 @@ layout (pill/full width), style (Glass, White, Midnight, Black), widget order, p
 Tested here: unit tests for the logic, and the renderer UI in Chromium with a mocked bridge.
 **Not yet tested on a real Windows machine:** acrylic rendering, the AppBar space reservation, tray, notifications and launch-at-login.
 Not built: now-playing, screen time, and per-service AI-limit / revenue widgets (they need API keys or OAuth).
+
+## Build without a Windows PC
+
+The repo has a GitHub Actions workflow (`.github/workflows/lumabar-build.yml`) that builds the installer and portable exe on a Windows runner.
+Open the repo's **Actions** tab, pick **Build lumabar (Windows)**, click **Run workflow**, then download `lumabar-windows` from the finished run.
+Pushing a tag like `lumabar-v0.1.0` also attaches the `.exe` files to a GitHub Release.
