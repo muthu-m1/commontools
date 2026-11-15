@@ -1,0 +1,31 @@
+{
+  "name": "lumabar",
+  "productName": "lumabar",
+  "version": "0.1.0",
+  "description": "A smart dock for Windows 11 with live widgets that replaces the taskbar's empty space.",
+  "main": "main.js",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/logic.test.js",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "optionalDependencies": {
+    "koffi": "^2.9.2"
+  },
+  "build": {
+    "appId": "app.lumabar.dock",
+    "productName": "lumabar",
+    "files": ["main.js", "preload.js", "appbar.js", "renderer/**", "assets/**", "package.json"],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": ["nsis", "portable"]
+    },
+    "nsis": { "oneClick": true, "perMachine": false }
+  }
+}
