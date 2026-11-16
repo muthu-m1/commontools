@@ -27,22 +27,25 @@ button { cursor: default; }
 /* ---------- dock ---------- */
 .dock-page #shell { display: flex; align-items: center; justify-content: center; padding: 0 16px; }
 .dock-page[data-width="full"] #shell { border-radius: 0; border-left: 0; border-right: 0; }
-#dock { display: flex; align-items: center; gap: 2px; width: max-content; height: 100%; }
+/* own compositing layer: avoids stale-pixel ghosting when text changes inside an acrylic window */
+#dock { display: flex; align-items: center; gap: 2px; width: max-content; height: 100%; transform: translateZ(0); will-change: transform; }
 .w {
   position: relative; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 11px; border: 0; border-radius: 11px;
   background: transparent; color: var(--fg); text-align: left; white-space: nowrap;
 }
 button.w:hover { background: var(--hover); }
 button.w:active { transform: scale(.97); }
-.w .txt { display: flex; flex-direction: column; min-width: 38px; }
-.w .v { font-size: 15px; font-weight: 600; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.w .txt { display: flex; flex-direction: column; min-width: 38px; padding-bottom: 6px; } /* leaves room for the meter */
+.w > .ico { margin-bottom: 6px; }
+.w .v { min-width: 3.4ch; font-size: 15px; font-weight: 600; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
 .w .l { font-size: 10.5px; color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
 .w > .ico { color: var(--muted); }
-.w .meter { position: absolute; left: 11px; right: 11px; bottom: 3px; height: 2.5px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.w .meter { position: absolute; left: 11px; right: 11px; bottom: 4px; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .w .meter b { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--accent); transition: width .4s ease; }
 .w[data-tone="good"] .v { color: var(--good); } .w[data-tone="good"] .meter b { background: var(--good); }
 .w[data-tone="warn"] .meter b { background: var(--warn); }
 .w[data-tone="bad"]  .v { color: var(--bad); }  .w[data-tone="bad"]  .meter b { background: var(--bad); }
+.w.settings > .ico { margin-bottom: 0; }
 .w.settings { padding: 0 10px; margin-left: 4px; border-left: 1px solid var(--line); border-radius: 0 11px 11px 0; }
 .w.apps { gap: 4px; padding: 0 6px; }
 .app-btn { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; }

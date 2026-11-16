@@ -26,11 +26,17 @@
     const { w, el } = item;
     if (w.render) { w.render(el, item.data, ctx); return; }
     const b = w.bar(item.data, ctx);
-    item.v.textContent = b.v;
-    item.l.textContent = b.l;
-    item.meter.style.display = b.pct == null ? 'none' : '';
-    if (b.pct != null) item.fill.style.width = Math.max(0, Math.min(100, b.pct)) + '%';
-    el.dataset.tone = b.tone || '';
+    // Only touch the DOM when something changed, so unchanged widgets never repaint.
+    if (item.v.textContent !== b.v) item.v.textContent = b.v;
+    if (item.l.textContent !== b.l) item.l.textContent = b.l;
+    const display = b.pct == null ? 'none' : '';
+    if (item.meter.style.display !== display) item.meter.style.display = display;
+    if (b.pct != null) {
+      const width = Math.round(Math.max(0, Math.min(100, b.pct))) + '%';
+      if (item.fill.style.width !== width) item.fill.style.width = width;
+    }
+    const tone = b.tone || '';
+    if (el.dataset.tone !== tone) el.dataset.tone = tone;
   }
 
   function build() {
