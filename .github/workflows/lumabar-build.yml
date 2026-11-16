@@ -4,6 +4,8 @@ on:
   workflow_dispatch:        # Actions tab -> "Build lumabar (Windows)" -> Run workflow
   push:
     tags: ['lumabar-v*']    # e.g. git tag lumabar-v0.1.0 && git push --tags
+    branches: ['claude/admiring-cerf-mbt7cj']   # build every push to the dev branch (remove once merged)
+    paths: ['apps/lumabar/**', '.github/workflows/lumabar-build.yml']
 
 permissions:
   contents: write           # lets tagged builds attach files to a GitHub Release
