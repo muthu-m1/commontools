@@ -1,0 +1,37 @@
+name: Build lumabar (Windows)
+
+on:
+  workflow_dispatch:        # Actions tab -> "Build lumabar (Windows)" -> Run workflow
+  push:
+    tags: ['lumabar-v*']    # e.g. git tag lumabar-v0.1.0 && git push --tags
+    branches: ['claude/admiring-cerf-mbt7cj']   # build every push to the dev branch (remove once merged)
+    paths: ['apps/lumabar/**', '.github/workflows/lumabar-build.yml']
+
+permissions:
+  contents: write           # lets tagged builds attach files to a GitHub Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/lumabar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm test
+      - run: npx electron-builder --win nsis portable --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumabar-windows
+          path: |
+            apps/lumabar/dist/*.exe
+          if-no-files-found: error
+      - name: Attach to release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/lumabar-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/lumabar/dist/*.exe
